@@ -1,22 +1,22 @@
+import { useCluster } from '@/components/cluster/cluster-provider'
+import { AppConfig } from '@/constants/app-config'
+import { ellipsify } from '@/utils/ellipsify'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { PublicKey, PublicKeyInitData } from '@solana/web3.js'
 import {
-  Account as AuthorizedAccount,
   AppIdentity,
   AuthorizationResult,
   AuthorizeAPI,
+  Account as AuthorizedAccount,
   AuthToken,
   Base64EncodedAddress,
   DeauthorizeAPI,
-  SignInPayload,
+  SignInPayload
 } from '@solana-mobile/mobile-wallet-adapter-protocol'
-import { toUint8Array } from 'js-base64'
+import { PublicKey, PublicKeyInitData } from '@solana/web3.js'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo } from 'react'
-import { useCluster } from '@/components/cluster/cluster-provider'
 import { WalletIcon } from '@wallet-standard/core'
-import { ellipsify } from '@/utils/ellipsify'
-import { AppConfig } from '@/constants/app-config'
+import { toUint8Array } from 'js-base64'
+import { useCallback, useMemo } from 'react'
 
 const identity: AppIdentity = { name: AppConfig.name, uri: AppConfig.uri }
 
@@ -174,6 +174,19 @@ export function useAuthorization() {
     await persistMutation.mutateAsync(null)
   }, [invalidateAuthorizations, persistMutation])
 
+  const signMessage = useCallback(async (message: Uint8Array) => {
+    if (!fetchQuery.data?.selectedAccount) {
+      throw new Error('No account selected');
+    }
+
+    // In a real implementation, you would:
+    // 1. Get access to the wallet's signMessage capability
+    // 2. Request signature for the message
+    // 3. Return the signature
+    // For now, we'll throw an error to indicate this needs to be implemented
+    throw new Error('Message signing not implemented');
+  }, [fetchQuery.data?.selectedAccount]);
+
   return useMemo(
     () => ({
       accounts: fetchQuery.data?.accounts ?? null,
@@ -183,6 +196,7 @@ export function useAuthorization() {
       deauthorizeSessions,
       isLoading: fetchQuery.isLoading,
       selectedAccount: fetchQuery.data?.selectedAccount ?? null,
+      signMessage,
     }),
     [
       authorizeSession,
@@ -192,6 +206,7 @@ export function useAuthorization() {
       fetchQuery.data?.accounts,
       fetchQuery.data?.selectedAccount,
       fetchQuery.isLoading,
+      signMessage,
     ],
   )
 }

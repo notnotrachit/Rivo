@@ -1,7 +1,7 @@
 // API configuration for Cypherpunk backend
 export const API_CONFIG = {
   // Change this to your production URL when deploying
-  baseUrl: __DEV__ ? 'http://localhost:3000' : 'https://your-production-url.com',
+  baseUrl: __DEV__ ? 'http://192.168.29.170:3000' : 'http://192.168.29.170:3000',
   
   endpoints: {
     // Social linking
@@ -17,6 +17,10 @@ export const API_CONFIG = {
     
     // User
     me: '/api/user/me',
+    
+    // Auth
+    authNonce: '/api/auth/nonce',
+    authVerify: '/api/auth/verify',
   },
   
   // USDC mint address on devnet

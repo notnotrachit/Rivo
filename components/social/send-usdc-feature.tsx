@@ -1,132 +1,116 @@
+import {
+    buildLinkedTransaction,
+    buildUnlinkedTransaction,
+    checkRecipient,
+    SendFlow,
+    usdcToLamports
+} from '@/utils/send-money';
+import { Transaction } from '@solana/web3.js';
+import * as bs58 from 'bs58';
 import React, { useState } from 'react';
-import { View, TextInput, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AppText } from '../app-text';
 import { AppView } from '../app-view';
-import { Button } from '@react-navigation/elements';
 import { useAuthorization } from '../solana/use-authorization';
-import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import { Transaction } from '@solana/web3.js';
-import { API_CONFIG } from '@/constants/api-config';
-import { Base64 } from 'js-base64';
+import { useMobileWallet } from '../solana/use-mobile-wallet';
 
 export function SendUSDCFeature() {
-  const { selectedAccount, authorizeSession } = useAuthorization();
-  const [handle, setHandle] = useState('');
-  const [amount, setAmount] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [walletInfo, setWalletInfo] = useState<{ found: boolean; wallet?: string } | null>(null);
+  const { selectedAccount } = useAuthorization();
+  const { signAndSendTransaction } = useMobileWallet();
 
-  const checkWallet = async () => {
-    if (!handle.trim()) {
-      Alert.alert('Error', 'Please enter a Twitter handle');
+  const [recipient, setRecipient] = useState('');
+  const [amount, setAmount] = useState('');
+  const [flow, setFlow] = useState<SendFlow>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [recipientWallet, setRecipientWallet] = useState<string | null>(null);
+
+  const handleCheckRecipient = async () => {
+    if (!recipient.trim()) {
+      Alert.alert('Error', 'Please enter a recipient');
       return;
     }
 
-    setLoading(true);
     try {
-      const response = await fetch(
-        `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.findWallet}?handle=${encodeURIComponent(
-          handle.startsWith('@') ? handle : `@${handle}`
-        )}&platform=twitter`
-      );
+      setLoading(true);
+      setError(null);
 
-      const data = await response.json();
-      setWalletInfo(data);
+      const result = await checkRecipient(recipient);
 
-      if (data.found) {
-        Alert.alert('Wallet Found', `This user has linked their wallet: ${data.wallet.slice(0, 8)}...${data.wallet.slice(-8)}`);
+      if (result.error) {
+        setError(result.error);
+        setFlow(null);
       } else {
-        Alert.alert(
-          'Wallet Not Linked',
-          'This user hasn\'t linked their wallet yet. Your USDC will be held in escrow and they can claim it when they link their wallet.'
-        );
+        setFlow(result.flow);
+        setRecipientWallet(result.recipientWallet || null);
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to check wallet');
+    } catch (err: any) {
+      setError(err.message || 'Failed to check recipient');
+      setFlow(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const sendUSDC = async () => {
+  const handleSendMoney = async () => {
     if (!selectedAccount) {
       Alert.alert('Error', 'Please connect your wallet first');
       return;
     }
 
-    if (!handle.trim() || !amount.trim()) {
-      Alert.alert('Error', 'Please enter both handle and amount');
+    if (!amount.trim()) {
+      Alert.alert('Error', 'Please enter an amount');
       return;
     }
 
-    const amountNum = parseFloat(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+    if (!flow || !recipientWallet) {
+      Alert.alert('Error', 'Please check recipient first');
       return;
     }
 
-    setLoading(true);
     try {
-      const handleWithAt = handle.startsWith('@') ? handle : `@${handle}`;
-      const amountInSmallestUnit = Math.floor(amountNum * 1_000_000);
+      setLoading(true);
+      setError(null);
 
-      // Build transaction
-      const endpoint = walletInfo?.found
-        ? API_CONFIG.endpoints.buildTransaction
-        : API_CONFIG.endpoints.buildUnlinkedTransaction;
+      const senderWallet = selectedAccount.publicKey.toBase58();
+      const amountInLamports = usdcToLamports(parseFloat(amount));
 
-      const body = walletInfo?.found
-        ? {
-          senderWallet: selectedAccount.publicKey.toBase58(),
-          recipientWallet: walletInfo.wallet,
-          mint: API_CONFIG.usdcMint,
-          amount: amountInSmallestUnit,
-        }
-        : {
-          senderWallet: selectedAccount.publicKey.toBase58(),
-          socialHandle: handleWithAt,
-          mint: API_CONFIG.usdcMint,
-          amount: amountInSmallestUnit,
-        };
+      // Build transaction based on flow
+      let txBase58: string;
 
-      const response = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to build transaction');
+      if (flow === 'linked') {
+        txBase58 = await buildLinkedTransaction(
+          senderWallet,
+          recipientWallet,
+          amountInLamports
+        );
+      } else {
+        txBase58 = await buildUnlinkedTransaction(
+          senderWallet,
+          recipientWallet,
+          amountInLamports
+        );
       }
 
       // Decode transaction
-      const transactionBuffer = Base64.toUint8Array(data.transaction);
-      const transaction = Transaction.from(transactionBuffer);
+      const txBuffer = bs58.decode(txBase58);
+      const tx = Transaction.from(txBuffer);
 
-      // Sign and send with Mobile Wallet Adapter
-      await transact(async (wallet) => {
-        const authResult = await authorizeSession(wallet);
+      // Sign and send transaction
+      const signature = await signAndSendTransaction(tx, 0);
 
-        const signedTransactions = await wallet.signAndSendTransactions({
-          transactions: [transaction],
-        });
+      Alert.alert(
+        'Success',
+        `Transaction sent! Signature: ${signature.substring(0, 20)}...`
+      );
 
-        Alert.alert(
-          'Success',
-          `Successfully sent ${amountNum} USDC to ${handleWithAt}!`
-        );
-
-        // Reset form
-        setHandle('');
-        setAmount('');
-        setWalletInfo(null);
-      });
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to send USDC');
+      // Reset form
+      setRecipient('');
+      setAmount('');
+      setFlow(null);
+      setRecipientWallet(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send money');
     } finally {
       setLoading(false);
     }
@@ -134,86 +118,192 @@ export function SendUSDCFeature() {
 
   return (
     <AppView>
-      <ScrollView style={{ flex: 1, padding: 20 }}>
-        <AppText style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
-          Send USDC
-        </AppText>
-        <AppText style={{ marginBottom: 20, opacity: 0.7 }}>
-          Send USDC to anyone using their Twitter handle
-        </AppText>
-
-        <View style={{ marginBottom: 15 }}>
-          <AppText style={{ marginBottom: 8, fontWeight: '600' }}>Twitter Handle</AppText>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              padding: 12,
-              fontSize: 16,
-            }}
-            placeholder="@username"
-            value={handle}
-            onChangeText={setHandle}
-            autoCapitalize="none"
-            editable={!loading}
-          />
-        </View>
-
-        <View style={{ marginBottom: 15 }}>
-          <Button onPress={checkWallet} disabled={loading || !handle.trim()}>
-            {loading ? <ActivityIndicator color="#fff" /> : <AppText>Check Wallet</AppText>}
-          </Button>
-        </View>
-
-        {walletInfo && (
-          <View
-            style={{
-              backgroundColor: walletInfo.found ? '#d4edda' : '#fff3cd',
-              padding: 15,
-              borderRadius: 8,
-              marginBottom: 15,
-            }}
-          >
-            <AppText style={{ fontWeight: 'bold', marginBottom: 5 }}>
-              {walletInfo.found ? '✅ Wallet Linked' : '⚠️ Wallet Not Linked'}
-            </AppText>
-            <AppText style={{ fontSize: 12 }}>
-              {walletInfo.found
-                ? `Wallet: ${walletInfo.wallet!.slice(0, 8)}...${walletInfo.wallet!.slice(-8)}`
-                : 'USDC will be held in escrow until they link their wallet'}
-            </AppText>
-          </View>
-        )}
-
-        <View style={{ marginBottom: 15 }}>
-          <AppText style={{ marginBottom: 8, fontWeight: '600' }}>Amount (USDC)</AppText>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              padding: 12,
-              fontSize: 16,
-            }}
-            placeholder="0.00"
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="decimal-pad"
-            editable={!loading}
-          />
-        </View>
-
-        <Button onPress={sendUSDC} disabled={loading || !selectedAccount || !walletInfo}>
-          {loading ? <ActivityIndicator color="#fff" /> : <AppText>Send USDC</AppText>}
-        </Button>
-
-        {!selectedAccount && (
-          <AppText style={{ marginTop: 10, textAlign: 'center', opacity: 0.6 }}>
-            Please connect your wallet to send USDC
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.container}>
+          <AppText style={styles.title}>Send USDC</AppText>
+          <AppText style={styles.subtitle}>
+            Send USDC to linked wallets or unlinked social handles
           </AppText>
-        )}
+
+          {/* Recipient Input */}
+          <View style={styles.section}>
+            <AppText style={styles.label}>Recipient</AppText>
+            <TextInput
+              style={styles.input}
+              placeholder="Wallet address or @handle"
+              value={recipient}
+              onChangeText={setRecipient}
+              autoCapitalize="none"
+              editable={!loading}
+            />
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleCheckRecipient}
+              disabled={loading || !recipient.trim()}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.buttonText}>Check Recipient</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Flow Status */}
+          {flow && (
+            <View
+              style={[
+                styles.statusCard,
+                flow === 'linked' ? styles.statusLinked : styles.statusUnlinked,
+              ]}
+            >
+              <AppText style={styles.statusText}>
+                {flow === 'linked'
+                  ? '✓ Recipient has linked account - direct transfer'
+                  : '⏳ Recipient not linked - tokens will be held in escrow'}
+              </AppText>
+            </View>
+          )}
+
+          {/* Amount Input */}
+          {flow && (
+            <View style={styles.section}>
+              <AppText style={styles.label}>Amount (USDC)</AppText>
+              <TextInput
+                style={styles.input}
+                placeholder="0.00"
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="decimal-pad"
+                editable={!loading}
+              />
+              <TouchableOpacity
+                style={[styles.button, styles.sendButton, loading && styles.buttonDisabled]}
+                onPress={handleSendMoney}
+                disabled={loading || !amount.trim()}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.buttonText}>Send Money</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorCard}>
+              <AppText style={styles.errorText}>{error}</AppText>
+            </View>
+          )}
+
+          {/* Info Message */}
+          {!selectedAccount && (
+            <View style={styles.infoCard}>
+              <AppText style={styles.infoText}>
+                Please connect your wallet to send USDC
+              </AppText>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </AppView>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  container: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 14,
+    marginBottom: 20,
+    opacity: 0.7,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#333333',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 10,
+    backgroundColor: '#1a1a1a',
+    color: '#ffffff',
+  },
+  button: {
+    backgroundColor: '#5865F2',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  sendButton: {
+    backgroundColor: '#10b981',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  statusCard: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+  },
+  statusLinked: {
+    backgroundColor: '#1e4620',
+    borderLeftColor: '#10b981',
+  },
+  statusUnlinked: {
+    backgroundColor: '#1e3a5f',
+    borderLeftColor: '#3b82f6',
+  },
+  statusText: {
+    color: '#ffffff',
+    fontSize: 14,
+  },
+  errorCard: {
+    backgroundColor: '#7f1d1d',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ef4444',
+  },
+  errorText: {
+    color: '#fca5a5',
+    fontSize: 14,
+  },
+  infoCard: {
+    backgroundColor: '#1e3a5f',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#3b82f6',
+  },
+  infoText: {
+    color: '#93c5fd',
+    fontSize: 14,
+  },
+});
