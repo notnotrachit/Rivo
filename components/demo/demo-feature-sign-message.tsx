@@ -1,14 +1,14 @@
-import { AppView } from '@/components/app-view'
 import { AppText } from '@/components/app-text'
-import { PublicKey } from '@solana/web3.js'
-import Snackbar from 'react-native-snackbar'
-import { ActivityIndicator, TextInput, View } from 'react-native'
-import React, { useState } from 'react'
-import { Button } from '@react-navigation/elements'
-import { useThemeColor } from '@/hooks/use-theme-color'
-import { useMutation } from '@tanstack/react-query'
+import { AppView } from '@/components/app-view'
 import { useWalletUi } from '@/components/solana/use-wallet-ui'
+import { useThemeColor } from '@/hooks/use-theme-color'
 import { ellipsify } from '@/utils/ellipsify'
+import { Button } from '@react-navigation/elements'
+import { PublicKey } from '@solana/web3.js'
+import { useMutation } from '@tanstack/react-query'
+import React, { useState } from 'react'
+import { ActivityIndicator, TextInput, View } from 'react-native'
+import Snackbar from 'react-native-snackbar'
 
 function useSignMessage({ address }: { address: PublicKey }) {
   const { signMessage } = useWalletUi()

@@ -1,7 +1,7 @@
 // API configuration for Cypherpunk backend
 export const API_CONFIG = {
   // Change this to your production URL when deploying
-  baseUrl: __DEV__ ? 'http://192.168.29.170:3000' : 'http://192.168.29.170:3000',
+  baseUrl: __DEV__ ? 'https://unified.rcht.dev' : 'https://unified.rcht.dev',
   
   endpoints: {
     // Social linking

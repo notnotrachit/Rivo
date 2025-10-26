@@ -4,12 +4,16 @@ import { AppText } from '@/components/app-text'
 import { AppView } from '@/components/app-view'
 import { AppConfig } from '@/constants/app-config'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { ActivityIndicator, View } from 'react-native'
+import { ActivityIndicator, View, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 import { Button } from '@react-navigation/elements'
+import { useThemeColor } from '@/hooks/use-theme-color'
 
 export default function SignIn() {
   const { signIn, isLoading } = useAuth()
+  const textColor = useThemeColor({ light: '#000000', dark: '#ffffff' }, 'text')
+  const accentColor = useThemeColor({ light: '#5865F2', dark: '#5865F2' }, 'text')
+  
   return (
     <AppView
       style={{
@@ -19,7 +23,12 @@ export default function SignIn() {
       }}
     >
       {isLoading ? (
-        <ActivityIndicator />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={accentColor} />
+          <AppText style={{ marginTop: 16, textAlign: 'center', opacity: 0.7 }}>
+            Connecting wallet...
+          </AppText>
+        </View>
       ) : (
         <SafeAreaView
           style={{
@@ -29,22 +38,27 @@ export default function SignIn() {
         >
           {/* Dummy view to push the next view to the center. */}
           <View />
-          <View style={{ alignItems: 'center', gap: 16 }}>
-            <AppText type="title">{AppConfig.name}</AppText>
-            <Image source={require('../assets/images/icon.png')} style={{ width: 128, height: 128 }} />
+          <View style={styles.contentContainer}>
+            <View style={styles.headerSection}>
+              <Image source={require('../assets/images/icon.png')} style={styles.logo} />
+              <AppText type="title" style={[styles.appName, { color: textColor }]}>
+                {AppConfig.name}
+              </AppText>
+              <AppText style={[styles.subtitle, { color: textColor, opacity: 0.6 }]}>
+                Connect your Solana wallet to get started
+              </AppText>
+            </View>
           </View>
-          <View style={{ marginBottom: 16 }}>
+          <View style={styles.buttonContainer}>
             <Button
               variant="filled"
-              style={{ marginHorizontal: 16 }}
+              style={styles.connectButton}
               onPress={async () => {
                 await signIn()
-                // Navigate after signing in. You may want to tweak this to ensure sign-in is
-                // successful before navigating.
                 router.replace('/')
               }}
             >
-              Connect
+              Connect Wallet
             </Button>
           </View>
         </SafeAreaView>
@@ -52,3 +66,40 @@ export default function SignIn() {
     </AppView>
   )
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contentContainer: {
+    alignItems: 'center',
+    gap: 24,
+  },
+  headerSection: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    borderRadius: 24,
+  },
+  appName: {
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    maxWidth: 280,
+    lineHeight: 24,
+  },
+  buttonContainer: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  connectButton: {
+    paddingVertical: 12,
+  },
+})

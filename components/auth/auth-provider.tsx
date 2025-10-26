@@ -3,7 +3,7 @@ import { useMobileWallet } from '@/components/solana/use-mobile-wallet'
 import { API_CONFIG } from '@/constants/api-config'
 import { AppConfig } from '@/constants/app-config'
 import { useMutation } from '@tanstack/react-query'
-import * as bs58 from 'bs58'
+import bs58 from 'bs58'
 import { createContext, type PropsWithChildren, use, useMemo } from 'react'
 
 export interface AuthState {
