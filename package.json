@@ -39,7 +39,8 @@
     "lint:check": "expo lint",
     "reset-project": "node ./scripts/reset-project.js",
     "start": "expo start",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "patch-package"
   },
   "main": "./index.js",
   "version": "1.0.0",
@@ -71,6 +72,7 @@
     "expo-linear-gradient": "~15.0.7",
     "expo-linking": "~8.0.8",
     "expo-router": "~6.0.10",
+    "expo-share-intent": "^5.0.1",
     "expo-splash-screen": "~31.0.10",
     "expo-status-bar": "~3.0.8",
     "expo-symbols": "~1.0.7",
@@ -94,6 +96,7 @@
     "@types/react": "~19.1.17",
     "eslint": "^9.33.0",
     "eslint-config-expo": "~10.0.0",
+    "patch-package": "^8.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3"
   },
