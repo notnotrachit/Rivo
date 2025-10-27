@@ -1,63 +1,70 @@
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { AppView } from '../../../components/app-view';
-import { TwitterLinkFeature } from '@/components/social/twitter-link-feature';
 import { AppText } from '@/components/app-text';
 import { useAuth } from '@/components/auth/auth-provider';
-import { useAuthorization } from '@/components/solana/use-authorization';
+import { TwitterLinkFeature } from '@/components/social/twitter-link-feature';
 import { BaseButton } from '@/components/solana/base-button';
+import { useAuthorization } from '@/components/solana/use-authorization';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { ellipsify } from '@/utils/ellipsify';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppView } from '../../../components/app-view';
 
 export default function HomePage() {
   const { isAuthenticated, signOut } = useAuth();
   const { selectedAccount } = useAuthorization();
   
-  const backgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#1a1a1a' }, 'background');
-  const textColor = useThemeColor({ light: '#000000', dark: '#ffffff' }, 'text');
-  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#333333' }, 'border');
-  const cardBg = useThemeColor({ light: '#ffffff', dark: '#0f0f0f' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#f7f7f9', dark: '#0b0b0c' }, 'background');
+  const textColor = useThemeColor({ light: '#0b0b0c', dark: '#ffffff' }, 'text');
+  const mutedText = useThemeColor({ light: '#5a5f6a', dark: '#9aa0aa' }, 'text');
+  const borderColor = useThemeColor({ light: '#e7e7ea', dark: '#1b1c20' }, 'border');
+  const cardBg = useThemeColor({ light: '#ffffff', dark: '#111216' }, 'background');
 
   return (
-    <AppView style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1, paddingHorizontal: 16 }}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+    <AppView style={{ flex: 1, backgroundColor }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: 16 }]}>
+          {/* Decorative backdrop */}
+          <View style={[styles.backdropContainer]} pointerEvents="none">
+            <View style={[styles.backdropBlob, styles.backdropBlobA]} />
+            <View style={[styles.backdropBlob, styles.backdropBlobB]} />
+          </View>
+
           {/* Header */}
           <View style={styles.header}>
-            <AppText type="title" style={[styles.headerTitle, { color: textColor }]}>
-              Welcome
-            </AppText>
-            <AppText style={[styles.headerSubtitle, { color: textColor, opacity: 0.6 }]}>
-              Manage your wallet and social connections
+            <AppText type="title" style={[styles.headerTitle, { color: textColor }]}>Home</AppText>
+            <AppText style={[styles.headerSubtitle, { color: mutedText }]}>
+              {isAuthenticated ? 'You are connected and ready to go' : 'Connect your wallet to get started'}
             </AppText>
           </View>
 
           {/* Wallet Status Card */}
           <View style={[styles.statusCard, { backgroundColor: cardBg, borderColor }]}>
             <View style={styles.statusHeader}>
-              <AppText style={[styles.statusTitle, { color: textColor }]}>Wallet Status</AppText>
+              <View style={{ flex: 1 }}>
+                <AppText style={[styles.statusEyebrow, { color: mutedText }]}>Status</AppText>
+                <AppText style={[styles.statusTitle, { color: textColor }]}>Wallet</AppText>
+              </View>
               <View style={[styles.statusBadge, { backgroundColor: isAuthenticated ? '#10b98126' : '#ef444426' }]}>
-                <View style={[styles.statusDot, { backgroundColor: isAuthenticated ? '#4ade80' : '#ef4444' }]} />
-                <AppText style={[styles.statusBadgeText, { color: isAuthenticated ? '#4ade80' : '#ef4444' }]}>
+                <View style={[styles.statusDot, { backgroundColor: isAuthenticated ? '#22c55e' : '#ef4444' }]} />
+                <AppText style={[styles.statusBadgeText, { color: isAuthenticated ? '#22c55e' : '#ef4444' }]}>
                   {isAuthenticated ? 'Connected' : 'Disconnected'}
                 </AppText>
               </View>
             </View>
-            
-            {isAuthenticated && (
-              <View style={{ alignItems: 'flex-end', marginBottom: 16 }}>
-                <BaseButton label="Disconnect" onPress={signOut} />
-              </View>
-            )}
 
             {selectedAccount && (
               <View style={styles.walletInfo}>
-                <AppText style={[styles.walletLabel, { color: textColor, opacity: 0.6 }]}>
-                  Wallet Address
-                </AppText>
+                <AppText style={[styles.walletLabel, { color: mutedText }]}>Wallet Address</AppText>
                 <AppText style={[styles.walletAddress, { color: textColor }]}>
                   {ellipsify(selectedAccount.publicKey.toBase58(), 12)}
                 </AppText>
+              </View>
+            )}
+
+            {isAuthenticated && (
+              <View style={styles.actionsRow}>
+                <View style={{ flex: 1 }} />
+                <BaseButton label="Disconnect" onPress={signOut} />
               </View>
             )}
           </View>
@@ -65,17 +72,22 @@ export default function HomePage() {
           {/* Twitter Linking */}
           {isAuthenticated && (
             <View style={styles.twitterSection}>
+              <AppText style={[styles.sectionTitle, { color: textColor }]}>Social</AppText>
+              <AppText style={[styles.sectionSubtitle, { color: mutedText }]}>Connect your profiles</AppText>
+              <View style={{ height: 12 }} />
               <TwitterLinkFeature />
             </View>
           )}
 
           {!isAuthenticated && (
             <View style={[styles.emptyState, { backgroundColor: cardBg, borderColor }]}>
-              <AppText style={[styles.emptyStateTitle, { color: textColor }]}>
-                Connect Your Wallet
-              </AppText>
-              <AppText style={[styles.emptyStateText, { color: textColor, opacity: 0.6 }]}>
-                Connect your Solana wallet to link social accounts and manage your funds
+              <View style={styles.emptyBadgeContainer}>
+                <View style={styles.emptyBadgeGlow} />
+                <View style={styles.emptyBadge} />
+              </View>
+              <AppText style={[styles.emptyStateTitle, { color: textColor }]}>Connect Your Wallet</AppText>
+              <AppText style={[styles.emptyStateText, { color: mutedText }]}> 
+                Link your Solana wallet to unlock payments, airdrops, and social features.
               </AppText>
             </View>
           )}
@@ -87,91 +99,159 @@ export default function HomePage() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 28,
+  },
+  backdropContainer: {
+    position: 'absolute',
+    top: -80,
+    left: -40,
+    right: -40,
+    height: 200,
+  },
+  backdropBlob: {
+    position: 'absolute',
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    opacity: 0.16,
+  },
+  backdropBlobA: {
+    backgroundColor: '#60a5fa',
+    top: 140,
+    left: -20,
+    transform: [{ rotate: '18deg' }],
+  },
+  backdropBlobB: {
+    backgroundColor: '#a78bfa',
+    top: 180,
+    right: -10,
+    transform: [{ rotate: '-12deg' }],
   },
   header: {
-    marginBottom: 28,
+    marginTop: 4,
+    marginBottom: 20,
   },
   headerTitle: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   headerSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   statusCard: {
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    padding: 18,
+    marginBottom: 20,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   statusHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
+  },
+  statusEyebrow: {
+    fontSize: 12,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
   statusTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
     gap: 6,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
   statusBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
   },
   walletInfo: {
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
   walletLabel: {
-    fontSize: 12,
-    marginBottom: 6,
+    fontSize: 11,
+    marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   walletAddress: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     fontFamily: 'monospace',
   },
+  actionsRow: {
+    marginTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   twitterSection: {
-    marginBottom: 16,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    marginTop: 4,
   },
   emptyState: {
     borderRadius: 16,
-    padding: 24,
+    padding: 28,
     alignItems: 'center',
     borderWidth: 1,
     borderStyle: 'dashed',
+    overflow: 'hidden',
   },
   emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 10,
     textAlign: 'center',
   },
   emptyStateText: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 19,
+  },
+  emptyBadgeContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginBottom: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyBadgeGlow: {
+    position: 'absolute',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#60a5fa33',
+  },
+  emptyBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#60a5fa',
   },
 });
