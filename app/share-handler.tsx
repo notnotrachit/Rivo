@@ -15,6 +15,7 @@ import bs58 from 'bs58';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
   Alert,
@@ -43,12 +44,45 @@ export default function ShareHandlerScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [transactionSignature, setTransactionSignature] = useState<string | null>(null);
   const [hasProcessedIntent, setHasProcessedIntent] = useState(false);
+  const [isTransacting, setIsTransacting] = useState(false);
+
+  // Restore transaction state on mount (in case app was backgrounded)
+  useEffect(() => {
+    const restoreState = async () => {
+      try {
+        const savedState = await AsyncStorage.getItem('pendingTransaction');
+        if (savedState) {
+          const state = JSON.parse(savedState);
+          console.log('Restoring transaction state:', state);
+          setRecipient(state.recipient);
+          setAmount(state.amount);
+          setFlow(state.flow);
+          setRecipientWallet(state.recipientWallet);
+          setIsTransacting(true);
+          setHasProcessedIntent(true);
+          setIsProcessingShare(false);
+        }
+      } catch (e) {
+        console.error('Failed to restore state:', e);
+      }
+    };
+    restoreState();
+  }, []);
 
   // Process share intent on mount
   useEffect(() => {
     console.log('ShareHandlerScreen mounted');
     console.log('hasShareIntent:', hasShareIntent);
     console.log('shareIntent:', shareIntent);
+    console.log('isTransacting:', isTransacting);
+    console.log('showSuccess:', showSuccess);
+    
+    // Don't redirect if we're in the middle of a transaction or showing success
+    if (isTransacting || showSuccess) {
+      console.log('Transaction in progress or success shown, not redirecting');
+      setIsProcessingShare(false);
+      return;
+    }
     
     if (hasShareIntent && shareIntent && !hasProcessedIntent) {
       const handle = extractHandleFromShareIntent(shareIntent);
@@ -72,7 +106,7 @@ export default function ShareHandlerScreen() {
       // Share intent was processed, just stop loading
       setIsProcessingShare(false);
     }
-  }, [hasShareIntent, shareIntent, hasProcessedIntent]);
+  }, [hasShareIntent, shareIntent, hasProcessedIntent, isTransacting, showSuccess]);
 
   const checkRecipientAuto = async (handle: string) => {
     console.log('checkRecipientAuto called with handle:', handle);
@@ -150,6 +184,16 @@ export default function ShareHandlerScreen() {
     try {
       setLoading(true);
       setError(null);
+      setIsTransacting(true); // Mark transaction as in progress
+
+      // Save state before opening Phantom (in case app gets backgrounded)
+      await AsyncStorage.setItem('pendingTransaction', JSON.stringify({
+        recipient,
+        amount,
+        flow,
+        recipientWallet,
+      }));
+      console.log('Saved transaction state to AsyncStorage');
 
       const senderWallet = selectedAccount.publicKey.toBase58();
       const amountInLamports = usdcToLamports(parseFloat(amount));
@@ -158,31 +202,45 @@ export default function ShareHandlerScreen() {
       let txBase58: string;
 
       if (flow === 'linked') {
+        console.log('Building LINKED transaction...');
         txBase58 = await buildLinkedTransaction(
           senderWallet,
           recipientWallet,
           amountInLamports
         );
+        console.log('Linked transaction built successfully');
       } else {
+        console.log('Building UNLINKED transaction for handle:', recipientWallet);
         txBase58 = await buildUnlinkedTransaction(
           senderWallet,
           recipientWallet,
           amountInLamports
         );
+        console.log('Unlinked transaction built successfully');
       }
 
       // Decode transaction
       const txBuffer = bs58.decode(txBase58);
       const tx = Transaction.from(txBuffer);
 
-      // Sign and send transaction
+      console.log('About to call signAndSendTransaction...');
+      // Sign and send transaction (this will open Phantom)
       const signature = await signAndSendTransaction(tx, 0);
+      console.log('Transaction signature received:', signature);
 
-      // Show success screen
+      // Clear saved state and show success screen
+      await AsyncStorage.removeItem('pendingTransaction');
+      console.log('Cleared transaction state from AsyncStorage');
+      
       setTransactionSignature(signature);
       setShowSuccess(true);
+      console.log('Success screen should now be visible');
     } catch (err: any) {
+      console.error('Transaction error:', err);
       setError(err.message || 'Failed to send money');
+      setIsTransacting(false); // Reset on error
+      // Clear saved state on error
+      await AsyncStorage.removeItem('pendingTransaction');
     } finally {
       setLoading(false);
     }
