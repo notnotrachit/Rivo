@@ -4,13 +4,13 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import 'react-native-reanimated'
 import { AppProviders } from '@/components/app-providers'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
 import { View } from 'react-native'
 import { useTrackLocations } from '@/hooks/use-track-locations'
 import { AppSplashController } from '@/components/app-splash-controller'
 import { useAuth } from '@/components/auth/auth-provider'
-import { ShareIntentProvider } from 'expo-share-intent'
+import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -45,6 +45,7 @@ export default function RootLayout() {
   return (
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <ShareIntentProvider>
+        <ShareLogger />
         <AppProviders>
           <AppSplashController />
           <RootNavigator />
@@ -54,6 +55,35 @@ export default function RootLayout() {
       <PortalHost />
     </View>
   )
+}
+
+function ShareLogger() {
+  const { hasShareIntent, shareIntent, error } = useShareIntentContext()
+  useEffect(() => {
+    if (error) {
+      console.log('ShareIntent error:', error)
+    }
+  }, [error])
+  useEffect(() => {
+    if (!hasShareIntent) return
+    try {
+      console.log('ShareIntent received:')
+      console.log('  text:', shareIntent?.text ?? null)
+      console.log('  webUrl:', shareIntent?.webUrl ?? null)
+      if (Array.isArray(shareIntent?.files)) {
+        console.log(
+          '  files:',
+          shareIntent.files.map(f => ({ fileName: f.fileName, mimeType: f.mimeType, path: f.path }))
+        )
+      } else {
+        console.log('  files:', null)
+      }
+      console.log('  meta:', shareIntent?.meta ?? null)
+    } catch (e) {
+      console.log('ShareIntent log failed:', e)
+    }
+  }, [hasShareIntent, shareIntent])
+  return null
 }
 
 function RootNavigator() {
