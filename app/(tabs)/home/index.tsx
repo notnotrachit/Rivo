@@ -5,19 +5,61 @@ import { BaseButton } from '@/components/solana/base-button';
 import { useAuthorization } from '@/components/solana/use-authorization';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { ellipsify } from '@/utils/ellipsify';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppView } from '../../../components/app-view';
+import { useEffect, useState } from 'react';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { AppConfig } from '@/constants/app-config';
+import { API_CONFIG } from '@/constants/api-config';
 
 export default function HomePage() {
   const { isAuthenticated, signOut } = useAuth();
   const { selectedAccount } = useAuthorization();
+  const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
   
   const backgroundColor = useThemeColor({ light: '#f7f7f9', dark: '#0b0b0c' }, 'background');
   const textColor = useThemeColor({ light: '#0b0b0c', dark: '#ffffff' }, 'text');
   const mutedText = useThemeColor({ light: '#5a5f6a', dark: '#9aa0aa' }, 'text');
   const borderColor = useThemeColor({ light: '#e7e7ea', dark: '#1b1c20' }, 'border');
   const cardBg = useThemeColor({ light: '#ffffff', dark: '#111216' }, 'background');
+
+  // Fetch USDC balance
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!selectedAccount) {
+        setUsdcBalance(null);
+        return;
+      }
+
+      try {
+        setLoadingBalance(true);
+        const connection = new Connection(AppConfig.clusters[0].endpoint, 'confirmed');
+        const mintPubkey = new PublicKey(API_CONFIG.usdcMint);
+        const walletPubkey = selectedAccount.publicKey;
+
+        const tokenAccount = await getAssociatedTokenAddress(mintPubkey, walletPubkey);
+        const accountInfo = await connection.getTokenAccountBalance(tokenAccount);
+
+        if (accountInfo.value) {
+          // Convert from lamports to USDC (6 decimals)
+          const balance = parseFloat(accountInfo.value.amount) / 1_000_000;
+          setUsdcBalance(balance);
+        } else {
+          setUsdcBalance(0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch USDC balance:', error);
+        setUsdcBalance(0);
+      } finally {
+        setLoadingBalance(false);
+      }
+    };
+
+    fetchBalance();
+  }, [selectedAccount]);
 
   return (
     <AppView style={{ flex: 1, backgroundColor }}>
@@ -53,12 +95,25 @@ export default function HomePage() {
             </View>
 
             {selectedAccount && (
-              <View style={styles.walletInfo}>
-                <AppText style={[styles.walletLabel, { color: mutedText }]}>Wallet Address</AppText>
-                <AppText style={[styles.walletAddress, { color: textColor }]}>
-                  {ellipsify(selectedAccount.publicKey.toBase58(), 12)}
-                </AppText>
-              </View>
+              <>
+                <View style={styles.walletInfo}>
+                  <AppText style={[styles.walletLabel, { color: mutedText }]}>Wallet Address</AppText>
+                  <AppText style={[styles.walletAddress, { color: textColor }]}>
+                    {ellipsify(selectedAccount.publicKey.toBase58(), 12)}
+                  </AppText>
+                </View>
+                
+                <View style={[styles.walletInfo, { marginTop: 12 }]}>
+                  <AppText style={[styles.walletLabel, { color: mutedText }]}>USDC Balance</AppText>
+                  {loadingBalance ? (
+                    <ActivityIndicator size="small" color={mutedText} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
+                  ) : (
+                    <AppText style={[styles.balanceAmount, { color: textColor }]}>
+                      {usdcBalance !== null ? `${usdcBalance.toFixed(2)} USDC` : '0.00 USDC'}
+                    </AppText>
+                  )}
+                </View>
+              </>
             )}
 
             {isAuthenticated && (
@@ -197,6 +252,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     fontFamily: 'monospace',
+  },
+  balanceAmount: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 4,
   },
   actionsRow: {
     marginTop: 14,
