@@ -44,6 +44,7 @@ function useSignInMutation() {
           `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.authNonce}?address=${address}`,
           {
             method: 'GET',
+            credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
             },
@@ -71,6 +72,7 @@ function useSignInMutation() {
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
+              'X-Login-Nonce': nonce,
             },
             body: JSON.stringify({
               address,

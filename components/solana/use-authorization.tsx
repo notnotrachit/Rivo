@@ -3,14 +3,14 @@ import { AppConfig } from '@/constants/app-config'
 import { ellipsify } from '@/utils/ellipsify'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
-  AppIdentity,
-  AuthorizationResult,
-  AuthorizeAPI,
-  Account as AuthorizedAccount,
-  AuthToken,
-  Base64EncodedAddress,
-  DeauthorizeAPI,
-  SignInPayload
+    AppIdentity,
+    AuthorizationResult,
+    AuthorizeAPI,
+    Account as AuthorizedAccount,
+    AuthToken,
+    Base64EncodedAddress,
+    DeauthorizeAPI,
+    SignInPayload
 } from '@solana-mobile/mobile-wallet-adapter-protocol'
 import { PublicKey, PublicKeyInitData } from '@solana/web3.js'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'

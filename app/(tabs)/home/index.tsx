@@ -4,12 +4,13 @@ import { TwitterLinkFeature } from '@/components/social/twitter-link-feature';
 import { AppText } from '@/components/app-text';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useAuthorization } from '@/components/solana/use-authorization';
+import { BaseButton } from '@/components/solana/base-button';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { ellipsify } from '@/utils/ellipsify';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, signOut } = useAuth();
   const { selectedAccount } = useAuthorization();
   
   const backgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#1a1a1a' }, 'background');
@@ -43,6 +44,12 @@ export default function HomePage() {
               </View>
             </View>
             
+            {isAuthenticated && (
+              <View style={{ alignItems: 'flex-end', marginBottom: 16 }}>
+                <BaseButton label="Disconnect" onPress={signOut} />
+              </View>
+            )}
+
             {selectedAccount && (
               <View style={styles.walletInfo}>
                 <AppText style={[styles.walletLabel, { color: textColor, opacity: 0.6 }]}>

@@ -4,8 +4,9 @@ import { clusterApiUrl } from '@solana/web3.js'
 
 export class AppConfig {
   static name = 'web3js-expo'
-  static uri = 'https://unified.rcht.dev'
-  static apiUrl = __DEV__ ? 'https://unified.rcht.dev' : 'https://unified.rcht.dev'
+  static uri = 'https://rivo.rcht.dev'
+  // static apiUrl = 'https://rivo.rcht.dev'
+  static apiUrl = 'http://192.168.29.170:3000'
   static clusters: Cluster[] = [
     {
       id: 'solana:devnet',

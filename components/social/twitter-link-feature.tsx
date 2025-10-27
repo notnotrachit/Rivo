@@ -1,11 +1,11 @@
 import { API_CONFIG } from '@/constants/api-config';
 import { EXTENDED_API_CONFIG } from '@/constants/extended-api-config';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { Button } from '@react-navigation/elements';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, TextInput, View } from 'react-native';
 import { AppText } from '../app-text';
 import { useAuthorization } from '../solana/use-authorization';
-import { useThemeColor } from '@/hooks/use-theme-color';
 
 type LinkedAccounts = {
   twitter?: string | null;
