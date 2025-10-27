@@ -1,10 +1,10 @@
 import { PortalHost } from '@rn-primitives/portal'
 import { useFonts } from 'expo-font'
-import { Stack } from 'expo-router'
+import { Stack, useRouter } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import 'react-native-reanimated'
 import { AppProviders } from '@/components/app-providers'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import * as SplashScreen from 'expo-splash-screen'
 import { View } from 'react-native'
 import { useTrackLocations } from '@/hooks/use-track-locations'
@@ -59,11 +59,15 @@ export default function RootLayout() {
 
 function ShareLogger() {
   const { hasShareIntent, shareIntent, error } = useShareIntentContext()
+  const router = useRouter()
+  const hasNavigated = useRef(false)
+
   useEffect(() => {
     if (error) {
       console.log('ShareIntent error:', error)
     }
   }, [error])
+
   useEffect(() => {
     if (!hasShareIntent) return
     try {
@@ -79,15 +83,41 @@ function ShareLogger() {
         console.log('  files:', null)
       }
       console.log('  meta:', shareIntent?.meta ?? null)
+
+      // Navigate to share handler if we haven't already
+      if (!hasNavigated.current) {
+        hasNavigated.current = true
+        console.log('Navigating to share-handler...')
+        console.log('Current router state:', router)
+        // Use setTimeout to ensure navigation happens after initial render
+        setTimeout(() => {
+          try {
+            console.log('Attempting navigation...')
+            router.push('/share-handler')
+            console.log('Navigation called')
+          } catch (e) {
+            console.error('Navigation error:', e)
+          }
+        }, 300)
+      }
     } catch (e) {
       console.log('ShareIntent log failed:', e)
     }
-  }, [hasShareIntent, shareIntent])
+  }, [hasShareIntent, shareIntent, router])
+
+  // Reset navigation flag when share intent is cleared
+  useEffect(() => {
+    if (!hasShareIntent) {
+      hasNavigated.current = false
+    }
+  }, [hasShareIntent])
+
   return null
 }
 
 function RootNavigator() {
   const { isAuthenticated } = useAuth()
+  
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={isAuthenticated}>
@@ -97,6 +127,14 @@ function RootNavigator() {
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
+      {/* Share handler available regardless of auth state */}
+      <Stack.Screen 
+        name="share-handler" 
+        options={{ 
+          presentation: 'modal',
+          headerShown: false 
+        }} 
+      />
     </Stack>
   )
 }
