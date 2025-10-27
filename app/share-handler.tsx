@@ -1,5 +1,4 @@
 import { AppText } from '@/components/app-text';
-import { AppView } from '@/components/app-view';
 import { useAuthorization } from '@/components/solana/use-authorization';
 import { useMobileWallet } from '@/components/solana/use-mobile-wallet';
 import {
@@ -9,23 +8,24 @@ import {
   SendFlow,
   usdcToLamports,
 } from '@/utils/send-money';
+import { generateTransactionId, saveTransaction } from '@/utils/transaction-history';
 import { extractHandleFromShareIntent } from '@/utils/twitter-handle-extractor';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Transaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { useShareIntentContext } from 'expo-share-intent';
 import { useRouter } from 'expo-router';
+import { useShareIntentContext } from 'expo-share-intent';
 import React, { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
   Alert,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  SafeAreaView,
 } from 'react-native';
 
 export default function ShareHandlerScreen() {
@@ -231,6 +231,20 @@ export default function ShareHandlerScreen() {
       // Clear saved state and show success screen
       await AsyncStorage.removeItem('pendingTransaction');
       console.log('Cleared transaction state from AsyncStorage');
+      
+      // Save transaction to history
+      try {
+        await saveTransaction({
+          id: generateTransactionId(),
+          recipient,
+          amount,
+          flow: flow!,
+          transactionSignature: signature,
+        });
+        console.log('Transaction saved to history');
+      } catch (saveError) {
+        console.error('Failed to save transaction to history:', saveError);
+      }
       
       setTransactionSignature(signature);
       setShowSuccess(true);
