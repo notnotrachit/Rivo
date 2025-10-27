@@ -36,11 +36,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="history"
         options={{
-          title: 'Settings',
+          title: 'History',
           tabBarIcon: ({ color, size }) => (
-            <UiIconSymbol name="gearshape.fill" color={color} size={size ?? 24} />
+            <UiIconSymbol name="clock.fill" color={color} size={size ?? 24} />
           ),
         }}
       />
