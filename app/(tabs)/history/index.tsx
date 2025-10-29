@@ -118,7 +118,7 @@ export default function TabHistoryScreen() {
                     </View>
                     <View>
                       <AppText style={[styles.recipientName, { color: textColor }]}>
-                        @{tx.recipient}
+                        {tx.recipient}
                       </AppText>
                       <AppText style={[styles.timestamp, { color: textColor, opacity: 0.6 }]}>
                         {formatTimestamp(tx.timestamp)}
