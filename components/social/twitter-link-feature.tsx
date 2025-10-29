@@ -1,11 +1,11 @@
 import { API_CONFIG } from '@/constants/api-config';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useTwitterOAuth } from '@/hooks/use-twitter-oauth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View, Image } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { AppText } from '../app-text';
 import { useAuthorization } from '../solana/use-authorization';
-import { useTwitterOAuth, TwitterOAuthResult } from '@/hooks/use-twitter-oauth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface LinkedTwitter {
   username: string;
@@ -19,12 +19,13 @@ export function TwitterLinkFeature() {
   const { authenticate, loading, error } = useTwitterOAuth();
   const [linkedTwitter, setLinkedTwitter] = useState<LinkedTwitter | null>(null);
   const [linking, setLinking] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
-  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#111216' }, 'background');
-  const textColor = useThemeColor({ light: '#0b0b0c', dark: '#ffffff' }, 'text');
-  const borderColor = useThemeColor({ light: '#e7e7ea', dark: '#1b1c20' }, 'border');
-  const mutedText = useThemeColor({ light: '#5a5f6a', dark: '#9aa0aa' }, 'text');
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const mutedText = useThemeColor({}, 'icon');
+  const tint = useThemeColor({}, 'tint');
 
   // Load linked Twitter account on mount and when wallet changes
   useEffect(() => {
@@ -32,6 +33,7 @@ export function TwitterLinkFeature() {
   }, [selectedAccount]);
 
   const loadLinkedTwitter = async () => {
+    setChecking(true);
     try {
       // First try to load from backend
       if (selectedAccount) {
@@ -82,6 +84,9 @@ export function TwitterLinkFeature() {
       } catch (e) {
         console.error('Failed to load from local storage:', e);
       }
+    }
+    finally {
+      setChecking(false);
     }
   };
 
@@ -150,7 +155,7 @@ export function TwitterLinkFeature() {
   const isLoading = loading || linking;
 
   return (
-    <View style={[styles.container, { backgroundColor, borderColor }]}>
+    <View style={[styles.container, { backgroundColor }]}>
       {/* Success Message */}
       {successMessage && (
         <View style={styles.successBox}>
@@ -175,7 +180,7 @@ export function TwitterLinkFeature() {
                 style={styles.profileImage}
               />
             ) : (
-              <View style={[styles.profileImagePlaceholder, { backgroundColor: '#1d9bf0' }]}>
+              <View style={[styles.profileImagePlaceholder, { backgroundColor: tint }]}>
                 <AppText style={styles.profileImagePlaceholderText}>
                   {linkedTwitter.username.charAt(0).toUpperCase()}
                 </AppText>
@@ -203,7 +208,7 @@ export function TwitterLinkFeature() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#1d9bf0" size="small" />
+                <ActivityIndicator color={textColor} size="small" />
               ) : (
                 <AppText style={styles.relinkButtonText}>Relink</AppText>
               )}
@@ -221,17 +226,20 @@ export function TwitterLinkFeature() {
       ) : (
         // Link Button
         <TouchableOpacity
-          style={[styles.button, styles.linkButton]}
+          style={[styles.button, styles.linkButton, { backgroundColor: '#5865F2', marginTop: 10 }]}
           onPress={handleLinkTwitter}
-          disabled={isLoading || !selectedAccount}
+          disabled={isLoading || checking || !selectedAccount}
         >
-          {isLoading ? (
+          {isLoading || checking ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator color="white" size="small" />
-              <AppText style={styles.linkButtonText}>Linking...</AppText>
+              <AppText style={styles.linkButtonText}>{checking ? 'Checking...' : 'Linking...'}</AppText>
             </View>
           ) : (
-            <AppText style={styles.linkButtonText}>🐦 Link Twitter Account</AppText>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+              <Image source={require('../../assets/x.png')} style={{ width: 20, height: 20 }} />
+              <AppText style={styles.linkButtonText}>Link Twitter Account</AppText>
+            </View>
           )}
         </TouchableOpacity>
       )}
@@ -248,13 +256,14 @@ export function TwitterLinkFeature() {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    borderWidth: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   successBox: {
     backgroundColor: '#22c55e',
@@ -358,8 +367,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   linkButton: {
-    backgroundColor: '#1d9bf0',
     marginBottom: 12,
+    borderRadius: 12,
+    alignSelf: 'stretch',
+    width: '100%',
   },
   linkButtonText: {
     color: 'white',
@@ -372,7 +383,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   relinkButton: {
-    backgroundColor: '#1d9bf0',
+    backgroundColor: 'transparent',
   },
   relinkButtonText: {
     color: 'white',
@@ -380,8 +391,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   unlinkButton: {
-    borderWidth: 1,
-    borderColor: '#ef4444',
     backgroundColor: 'transparent',
   },
   unlinkButtonText: {

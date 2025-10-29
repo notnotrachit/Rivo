@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "web3js-expo",
-    "slug": "web3js-expo",
+    "name": "Rivo",
+    "slug": "Rivo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -14,7 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#2D2B55"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.beeman.web3jsexpo"
@@ -29,9 +29,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFFFFF",
+          "backgroundColor": "#2D2B55",
           "dark": {
-            "backgroundColor": "#000000",
+            "backgroundColor": "#2D2B55",
             "image": "./assets/images/splash-icon.png"
           },
           "image": "./assets/images/splash-icon.png",

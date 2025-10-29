@@ -24,8 +24,6 @@ export default function TabLayout() {
       {/* The index redirects to the home screen */}
       <Tabs.Screen name="index" options={{ tabBarItemStyle: { display: 'none' } }} />
       {/* Hide deprecated tabs */}
-      <Tabs.Screen name="account" options={{ tabBarItemStyle: { display: 'none' } }} />
-      <Tabs.Screen name="demo" options={{ tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen
         name="home"
         options={{

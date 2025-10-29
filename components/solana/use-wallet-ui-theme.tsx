@@ -5,10 +5,12 @@ export function useWalletUiTheme() {
   const listBackgroundColor = useThemeColor({}, 'background')
   const borderColor = useThemeColor({}, 'border')
   const textColor = useThemeColor({}, 'text')
+  const accentColor = useThemeColor({}, 'tint')
   return {
     backgroundColor,
     listBackgroundColor,
     borderColor,
     textColor,
+    accentColor,
   }
 }

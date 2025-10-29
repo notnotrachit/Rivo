@@ -1,13 +1,13 @@
-import { router } from 'expo-router'
-import { useAuth } from '@/components/auth/auth-provider'
 import { AppText } from '@/components/app-text'
 import { AppView } from '@/components/app-view'
+import { useAuth } from '@/components/auth/auth-provider'
 import { AppConfig } from '@/constants/app-config'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { ActivityIndicator, View, StyleSheet } from 'react-native'
-import { Image } from 'expo-image'
-import { Button } from '@react-navigation/elements'
 import { useThemeColor } from '@/hooks/use-theme-color'
+import { Button } from '@react-navigation/elements'
+import { Image } from 'expo-image'
+import { router } from 'expo-router'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 export default function SignIn() {
   const { signIn, isLoading } = useAuth()
@@ -40,7 +40,7 @@ export default function SignIn() {
           <View />
           <View style={styles.contentContainer}>
             <View style={styles.headerSection}>
-              <Image source={require('../assets/images/icon.png')} style={styles.logo} />
+              <Image source={require('../assets/logo.svg')} style={styles.logo} />
               <AppText type="title" style={[styles.appName, { color: textColor }]}>
                 {AppConfig.name}
               </AppText>
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   logo: {
     width: 120,

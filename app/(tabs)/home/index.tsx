@@ -1,18 +1,17 @@
 import { AppText } from '@/components/app-text';
 import { useAuth } from '@/components/auth/auth-provider';
 import { TwitterLinkFeature } from '@/components/social/twitter-link-feature';
-import { BaseButton } from '@/components/solana/base-button';
 import { useAuthorization } from '@/components/solana/use-authorization';
+import { API_CONFIG } from '@/constants/api-config';
+import { AppConfig } from '@/constants/app-config';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { ellipsify } from '@/utils/ellipsify';
-import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppView } from '../../../components/app-view';
-import { useEffect, useState } from 'react';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
-import { AppConfig } from '@/constants/app-config';
-import { API_CONFIG } from '@/constants/api-config';
 
 export default function HomePage() {
   const { isAuthenticated, signOut } = useAuth();
@@ -20,11 +19,11 @@ export default function HomePage() {
   const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   
-  const backgroundColor = useThemeColor({ light: '#f7f7f9', dark: '#0b0b0c' }, 'background');
-  const textColor = useThemeColor({ light: '#0b0b0c', dark: '#ffffff' }, 'text');
-  const mutedText = useThemeColor({ light: '#5a5f6a', dark: '#9aa0aa' }, 'text');
-  const borderColor = useThemeColor({ light: '#e7e7ea', dark: '#1b1c20' }, 'border');
-  const cardBg = useThemeColor({ light: '#ffffff', dark: '#111216' }, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const mutedText = useThemeColor({}, 'icon');
+  const borderColor = useThemeColor({}, 'border');
+  const cardBg = useThemeColor({}, 'background');
+  const tint = useThemeColor({}, 'tint');
 
   // Fetch USDC balance
   useEffect(() => {
@@ -45,7 +44,7 @@ export default function HomePage() {
 
         if (accountInfo.value) {
           // Convert from lamports to USDC (6 decimals)
-          const balance = parseFloat(accountInfo.value.amount) / 1_000_000;
+          const balance = Number.parseFloat(accountInfo.value.amount) / 1_000_000;
           setUsdcBalance(balance);
         } else {
           setUsdcBalance(0);
@@ -62,28 +61,24 @@ export default function HomePage() {
   }, [selectedAccount]);
 
   return (
-    <AppView style={{ flex: 1, backgroundColor }}>
+    <AppView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: 16 }]}>
           {/* Decorative backdrop */}
           <View style={[styles.backdropContainer]} pointerEvents="none">
-            <View style={[styles.backdropBlob, styles.backdropBlobA]} />
-            <View style={[styles.backdropBlob, styles.backdropBlobB]} />
+            <View style={[styles.backdropBlob, { backgroundColor: `${tint}44`, top: 120, left: -20, transform: [{ rotate: '18deg' }] }]} />
+            <View style={[styles.backdropBlob, { backgroundColor: `${tint}22`, top: 170, right: -10, transform: [{ rotate: '-12deg' }] }]} />
           </View>
 
           {/* Header */}
           <View style={styles.header}>
             <AppText type="title" style={[styles.headerTitle, { color: textColor }]}>Home</AppText>
-            <AppText style={[styles.headerSubtitle, { color: mutedText }]}>
-              {isAuthenticated ? 'You are connected and ready to go' : 'Connect your wallet to get started'}
-            </AppText>
           </View>
 
           {/* Wallet Status Card */}
-          <View style={[styles.statusCard, { backgroundColor: cardBg, borderColor }]}>
+          <View style={[styles.statusCard, { backgroundColor: '#2D2B55', borderColor }]}>
             <View style={styles.statusHeader}>
               <View style={{ flex: 1 }}>
-                <AppText style={[styles.statusEyebrow, { color: mutedText }]}>Status</AppText>
                 <AppText style={[styles.statusTitle, { color: textColor }]}>Wallet</AppText>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: isAuthenticated ? '#10b98126' : '#ef444426' }]}>
@@ -96,14 +91,14 @@ export default function HomePage() {
 
             {selectedAccount && (
               <>
-                <View style={styles.walletInfo}>
-                  <AppText style={[styles.walletLabel, { color: mutedText }]}>Wallet Address</AppText>
+                <View style={[styles.walletInfo, { borderTopColor: borderColor }] }>
+                  <AppText style={[styles.walletLabel, { color: mutedText }]}>Address</AppText>
                   <AppText style={[styles.walletAddress, { color: textColor }]}>
                     {ellipsify(selectedAccount.publicKey.toBase58(), 12)}
                   </AppText>
                 </View>
                 
-                <View style={[styles.walletInfo, { marginTop: 12 }]}>
+                <View style={[styles.walletInfo, { marginTop: 12, borderTopColor: borderColor }] }>
                   <AppText style={[styles.walletLabel, { color: mutedText }]}>USDC Balance</AppText>
                   {loadingBalance ? (
                     <ActivityIndicator size="small" color={mutedText} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
@@ -115,26 +110,17 @@ export default function HomePage() {
                 </View>
               </>
             )}
-
-            {isAuthenticated && (
-              <View style={styles.actionsRow}>
-                <View style={{ flex: 1 }} />
-                <BaseButton label="Disconnect" onPress={signOut} />
-              </View>
-            )}
           </View>
 
           {/* Twitter Linking */}
           {isAuthenticated && (
             <View style={styles.twitterSection}>
               <AppText style={[styles.sectionTitle, { color: textColor }]}>Social</AppText>
-              <AppText style={[styles.sectionSubtitle, { color: mutedText }]}>Connect your profiles</AppText>
-              <View style={{ height: 12 }} />
               <TwitterLinkFeature />
             </View>
           )}
 
-          {!isAuthenticated && (
+          {isAuthenticated ? null : (
             <View style={[styles.emptyState, { backgroundColor: cardBg, borderColor }]}>
               <View style={styles.emptyBadgeContainer}>
                 <View style={styles.emptyBadgeGlow} />
