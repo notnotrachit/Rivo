@@ -1,8 +1,41 @@
 # Rivo - Social Payments on Solana
 
+<p align="center">
+  <img src="https://rivo.rcht.dev/logo.svg" alt="Rivo Logo" width="120" height="120">
+</p>
+
+## 📋 Table of Contents
+
+- [🚀 Project Overview](#-project-overview)
+  - [The Problem](#the-problem)
+  - [Our Solution](#our-solution)
+  - [Platform Architecture](#platform-architecture)
+  - [Core Innovation: Social-to-Wallet Mapping](#core-innovation-social-to-wallet-mapping)
+  - [Key Differentiators](#key-differentiators)
+- [🎯 Key Features](#-key-features)
+- [🏗️ Technical Architecture](#️-technical-architecture)
+  - [Tech Stack](#tech-stack)
+  - [Accounts Structure](#accounts-structure)
+- [🌐 Web Dashboard Features](#-web-dashboard-features)
+- [📱 Mobile App Features](#-mobile-app-features)
+- [🔌 Browser Extension](#-browser-extension-payment-method-for-desktop)
+- [🏗️ Platform Summary](#️-platform-summary)
+- [🎨 UI/UX Highlights](#-uiux-highlights)
+- [📊 Technical Specifications](#-technical-specifications)
+- [🎯 Future Implementations](#-future-implementations)
+- [💰 Business Model](#-business-model)
+- [🔗 Links](#-links)
+- [🙏 Acknowledgments](#-acknowledgments)
+
+---
+
 ## 🚀 Project Overview
 
 **Rivo** is a revolutionary social payment ecosystem built on Solana that transforms how people send and receive cryptocurrency. By bridging social media identities with blockchain wallets, Rivo makes crypto payments as intuitive as tagging someone in a post.
+
+**🔗 Related Repository**: The **webapp**, **smart contracts**, and **Chrome extension** are maintained in a separate repository: [https://github.com/arnabdotpy/cypherpunk](https://github.com/arnabdotpy/cypherpunk)
+
+**🌐 Web Dashboard**: Access the Rivo web application at [rivo.rcht.dev](https://rivo.rcht.dev/)
 
 ### The Problem
 
@@ -34,7 +67,6 @@ Rivo eliminates wallet addresses entirely by using **social media handles** as p
 - View pending escrow claims
 - Claim accumulated USDC
 - View transaction history
-- Account management
 
 **Payment Methods:**
 
@@ -113,22 +145,20 @@ Rivo eliminates wallet addresses entirely by using **social media handles** as p
 
 #### Mobile App
 
-- **Framework**: React Native with Expo
+- **Framework**: Solana Mobile framework (React Native + Expo)
 - **Navigation**: Expo Router (file-based routing)
 - **Blockchain**: Solana Web3.js
 - **Wallet**: Solana Mobile Wallet Adapter Protocol
-- **State Management**: TanStack Query (React Query)
 - **Storage**: AsyncStorage
-- **UI**: React Native components with custom theming
 
 #### Browser Extension
 
 - Chrome/Firefox extension for social media integration
 
-#### Backend (Separate Repository)
+#### WebApp (Separate Repository)
 
-- **Runtime**: Node.js with Express
-- **Blockchain**: Anchor framework for Solana programs
+- **Framework**: NextJS
+- **UI**: TailwindCSS
 - **Auth**: Twitter OAuth 2.0
 
 #### Accounts Structure:
@@ -157,7 +187,6 @@ The web dashboard provides a full management interface accessible from any brows
 - Link Twitter account via OAuth 2.0
 - View linked social accounts
 - Manage wallet connections
-- Profile settings
 
 ### Claim Escrow Funds
 
@@ -170,9 +199,7 @@ The web dashboard provides a full management interface accessible from any brows
 ### Transaction History
 
 - View all sent and received payments
-- Filter by direct transfers vs escrow
 - Transaction signatures and details
-- Export transaction data
 
 ---
 
@@ -216,169 +243,6 @@ The browser extension is specifically for **sending payments** on desktop/laptop
 
 ---
 
-## 💡 User Flows
-
-### Flow 1: Account Setup (Web Dashboard or Mobile App)
-
-```
-1. User visits Rivo web dashboard OR downloads mobile app
-2. Clicks "Connect Wallet"
-3. Connects Solana wallet (Phantom)
-4. Clicks "Link Twitter Account"
-5. Redirected to Twitter OAuth page
-6. Authorizes Rivo app
-7. Returns to dashboard with Twitter profile data
-8. On-chain transaction creates SocialLink account
-9. Twitter handle now mapped to wallet address
-10. User can now receive payments via @username
-```
-
-**Platform Options:**
-
-- 🌐 **Web Dashboard**: Full-featured management interface
-- 📱 **Mobile App**: Same features + mobile payment capabilities
-
----
-
-### Flow 2: Sending Money via Browser Extension (Desktop/Laptop)
-
-**Use Case:** Sending payments from desktop/laptop while browsing Twitter
-
-**Prerequisites:**
-
-- User must install Rivo browser extension (Chrome/Firefox)
-- User must have Solana wallet browser extension (Phantom)
-
-#### Scenario A: Recipient Has Linked Wallet (Direct Transfer)
-
-```
-1. User installs Rivo browser extension (Chrome/Firefox)
-2. User visits any Twitter profile
-3. Extension adds "Send USDC" button next to Follow button
-4. User clicks "Send USDC"
-5. Extension checks if @username has linked wallet
-6. ✓ Wallet found - shows "Direct transfer to linked wallet"
-7. User enters amount in modal
-8. User clicks "Send"
-9. Connects Solana wallet (Phantom browser extension)
-10. Signs transaction
-11. USDC instantly transferred to recipient's wallet
-12. Success notification shown
-```
-
-#### Scenario B: Recipient Hasn't Linked Wallet (Escrow)
-
-```
-1. User installs Rivo browser extension
-2. User visits Twitter profile of non-linked user
-3. Extension adds "Send USDC" button
-4. User clicks "Send USDC"
-5. Extension checks if @username has linked wallet
-6. ⏳ No wallet found - shows "Funds will be held in escrow"
-7. User enters amount in modal
-8. User clicks "Send"
-9. Connects Solana wallet (browser extension)
-10. Signs transaction
-11. USDC transferred to escrow account (on-chain)
-12. Recipient can claim anytime after linking
-```
-
-### Flow 3: Sending Money via Mobile App (Android/iOS)
-
-**Use Case:** Sending payments from mobile phone while browsing Twitter
-
-**Prerequisites:**
-
-- User must install Rivo mobile app
-- User must have mobile Solana wallet (Phantom)
-
-#### Payment via Share Functionality
-
-```
-1. User browses Twitter on mobile (Twitter app or browser)
-2. Finds a profile they want to send USDC to
-3. User taps "Share" button on Twitter profile
-4. Selects "Rivo" from share menu
-5. Rivo app opens with @username pre-filled
-6. App checks if @username has linked wallet
-7. Shows status: "✓ Direct transfer" or "⏳ Escrow"
-8. User enters amount
-9. Taps "Send USDC"
-10. Mobile wallet opens for signature
-11. Signs transaction
-12. USDC sent (direct or escrow based on link status)
-13. Success notification shown
-14. Returns to Twitter
-```
-
-**Key Differences:**
-
-- 🖥️ **Desktop**: Browser extension adds button directly on Twitter pages
-- 📱 **Mobile**: Uses native share functionality to send profiles to Rivo app
-- 🌐 **Both**: Account management done via web dashboard or mobile app
-
----
-
-### Flow 4: Claiming Escrow Funds (Web Dashboard or Mobile App)
-
-**Use Case:** Claiming funds that were sent before linking account
-
-```
-1. User logs into web dashboard OR opens mobile app
-2. Navigates to "Claim Funds" section
-3. Clicks/Taps "Check for Pending Claims"
-4. System queries on-chain escrow accounts for @username
-5. Shows accumulated USDC amount
-6. Shows number of payments received
-7. User clicks/taps "View Payment History"
-8. Sees list of senders, amounts, and timestamps
-9. User clicks/taps "Claim All"
-10. Wallet opens for signature (browser or mobile)
-11. Signs transaction
-12. All escrowed USDC transferred to user's wallet
-13. Escrow accounts closed
-14. Success message shown
-```
-
-**Platform Options:**
-
-- 🌐 **Web Dashboard**: Claim via browser with wallet extension
-- 📱 **Mobile App**: Claim via app with mobile wallet
-
----
-
-### Flow 5: End-to-End Example
-
-**Alice wants to tip Bob for a helpful tweet:**
-
-```
-Without Rivo:
-❌ Alice asks Bob for his wallet address
-❌ Bob shares: 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU
-❌ Alice copies address (risk of typo)
-❌ Alice opens wallet app
-❌ Alice pastes address and sends
-❌ Total: 5+ steps, high friction
-
-With Rivo:
-✅ Alice sees Bob's tweet
-✅ Clicks "Send USDC" button (added by extension)
-✅ Enters $10
-✅ Clicks "Send"
-✅ Signs transaction
-✅ Done! Bob receives money instantly
-✅ Total: 3 clicks, seamless experience
-```
-
-**If Bob hasn't linked his wallet yet:**
-
-- Money goes to escrow automatically
-- Bob gets notified (future: Twitter DM or email)
-- Bob visits web dashboard OR downloads mobile app
-- Connects wallet and links Twitter account
-- Claims all pending payments in one click
-
----
 
 ## 🏗️ Platform Summary
 
@@ -458,19 +322,9 @@ This project is open source and welcomes contributions:
 
 #### Instagram Integration
 
-- **OAuth 2.0 authentication** with Instagram
-- Link Instagram handles to Solana wallets
-- Send USDC via Instagram usernames
-- Browser extension support for Instagram profiles
-- Instagram DM payment requests
-
 #### LinkedIn Integration
 
-- **Professional payment network** for freelancers and businesses
-- Link LinkedIn profiles to wallets
-- B2B payments using company pages
-- Invoice generation and payment tracking
-- Professional networking with crypto payments
+#### Reddit Integration
 
 ### Phase 2: Enhanced Features (Q2 2025)
 
@@ -494,7 +348,6 @@ This project is open source and welcomes contributions:
 - **iOS app release** - Full iOS support with TestFlight beta
 - **Push notifications** - Payment alerts and claim reminders
 - **Biometric security** - Face ID / Touch ID for transactions
-- **Offline mode** - Queue transactions for later
 
 ### Phase 3: Business & Enterprise (Q3-Q4 2025)
 
@@ -508,7 +361,6 @@ This project is open source and welcomes contributions:
 
 #### Advanced Features
 
-- **Fiat on/off ramps** - Buy crypto with credit cards
 - **NFT gating** - Premium features for NFT holders
 - **DAO governance** - Community-driven development
 - **Analytics dashboard** - Transaction insights and trends
@@ -519,119 +371,26 @@ This project is open source and welcomes contributions:
 
 ### Revenue Streams
 
-#### 1. Transaction Fees (Primary)
+#### 1. Escrow Claiming Fees (Primary)
 
-- **0.5% fee on all transactions** (competitive with traditional payment processors)
-- Significantly lower than credit cards (2-3%) or PayPal (2.9% + $0.30)
-- Example: $100 transfer = $0.50 fee
-- Scalable revenue as transaction volume grows
+- **2-5% fee on claiming unclaimed tokens** for previously unlinked accounts
+- Applied only when users claim funds that were held in escrow
+- Covers escrow infrastructure and operational costs
+- Incentivizes users to link accounts early for direct transfers
 
-#### 2. Premium Features (Subscription)
+#### 2. Yield Generation from Unclaimed Tokens (Passive)
 
-- **Rivo Pro** - $4.99/month
-  - Zero transaction fees
-  - Priority support
-  - Advanced analytics
-  - Custom payment links
-  - API access
-  - Higher transaction limits
+- **Staking unclaimed USDC** while held in escrow to generate yield
+- Yield earned on escrowed funds creates additional revenue
+- Helps offset operational costs of escrow system
+- Potential to share portion of yield with users as incentive
 
-#### 3. Enterprise Solutions (B2B)
+#### 3. x402 Protocol API Services
 
-- **Custom pricing** for businesses
-- White-label solutions
-- Dedicated support
-- Custom integrations
-- Volume discounts
-- SLA guarantees
-
-#### 4. Value-Added Services
-
-- **Express claims** - Instant escrow claims for a small fee
-- **Payment insurance** - Protection against errors
-- **Currency conversion** - Fees on token swaps
-- **Premium analytics** - Advanced reporting tools
-
-### Market Opportunity
-
-#### Target Market Size
-
-- **Crypto users**: 420M+ globally (2024)
-- **Twitter users**: 550M+ active users
-- **Instagram users**: 2B+ active users
-- **LinkedIn users**: 900M+ professionals
-- **Freelancers**: 1.5B+ worldwide
-
-#### Addressable Market
-
-- **P2P payments**: $2.3T market (growing 15% annually)
-- **Cross-border remittances**: $700B+ annually
-- **Creator economy**: $250B+ market
-- **Freelance payments**: $1.5T+ market
-
-#### Competitive Advantages
-
-- ✅ **Lower fees** than traditional payment processors
-- ✅ **Faster settlements** (seconds vs. days)
-- ✅ **Global reach** without currency conversion
-- ✅ **No chargebacks** (blockchain finality)
-- ✅ **Privacy-focused** (no personal data required)
-- ✅ **Open source** (community trust)
-
-### Go-to-Market Strategy
-
-#### Phase 1: Community Building (Months 1-3)
-
-- Launch on Solana devnet
-- Build crypto-native user base
-- Gather feedback and iterate
-- Create educational content
-- Partner with crypto influencers
-
-#### Phase 2: Mainnet Launch (Months 4-6)
-
-- Deploy to Solana mainnet
-- Onboard early adopters
-- Implement transaction fees
-- Launch referral program
-- PR and media outreach
-
-#### Phase 3: Growth & Scale (Months 7-12)
-
-- Add Instagram and LinkedIn
-- Launch premium subscriptions
-- Expand to enterprise customers
-- International expansion
-- Strategic partnerships
-
-### Unit Economics
-
-#### Customer Acquisition
-
-- **CAC (Customer Acquisition Cost)**: $5-10 per user
-- **Organic growth** through social sharing
-- **Referral program**: $5 bonus for referrer + referee
-- **Viral coefficient**: 1.5-2.0 (each user brings 1-2 more)
-
-#### Revenue Per User
-
-- **Average transaction**: $50
-- **Transactions per month**: 4-6
-- **Monthly revenue per user**: $1-1.50 (at 0.5% fee)
-- **Premium subscribers**: $4.99/month
-- **LTV (Lifetime Value)**: $50-100 per user
-
-#### Profitability Timeline
-
-- **Break-even**: 50,000 active users
-- **Target**: 100,000 users by end of Year 1
-- **Projected revenue**: $600K-1M annually at 100K users
-
----
-
-## 📄 License
-
-MIT License - See LICENSE file for details
+- **API endpoints for wallet and social account lookups** via x402 protocol
+- Enable third-party developers to access social-to-wallet mapping data
+- Monetize through API call pricing via x402 protocol
+- B2B integration for wallets, exchanges, and DeFi platforms
 
 ---
 
@@ -646,7 +405,7 @@ MIT License - See LICENSE file for details
 - Solana Foundation for blockchain infrastructure
 - Solana Mobile Stack for wallet adapter
 - Twitter API for OAuth integration
-- Expo team for React Native framework
+- Expo team
 - Open source community
 
 ---
