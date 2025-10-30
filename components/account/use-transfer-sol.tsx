@@ -3,6 +3,7 @@ import { useConnection } from '@/components/solana/solana-provider'
 import { useMutation } from '@tanstack/react-query'
 import { useWalletUi } from '@/components/solana/use-wallet-ui'
 import { createTransaction } from '@/components/account/create-transaction'
+import { playSuccessSound } from '@/utils/play-success-sound'
 import { useGetBalanceInvalidate } from './use-get-balance'
 
 export function useTransferSol({ address }: { address: PublicKey }) {
@@ -38,6 +39,7 @@ export function useTransferSol({ address }: { address: PublicKey }) {
     },
     onSuccess: async (signature) => {
       console.log(signature)
+      await playSuccessSound()
       await invalidateBalance()
     },
     onError: (error) => {

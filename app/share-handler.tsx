@@ -28,6 +28,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { playSuccessSound } from '@/utils/play-success-sound'
 
 export default function ShareHandlerScreen() {
   const router = useRouter()
@@ -249,6 +250,7 @@ export default function ShareHandlerScreen() {
       }
 
       setTransactionSignature(signature)
+      await playSuccessSound()
       setShowSuccess(true)
       console.log('Success screen should now be visible')
     } catch (err: any) {

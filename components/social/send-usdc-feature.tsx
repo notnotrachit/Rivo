@@ -14,6 +14,7 @@ import { AppText } from '../app-text'
 import { AppView } from '../app-view'
 import { useAuthorization } from '../solana/use-authorization'
 import { useMobileWallet } from '../solana/use-mobile-wallet'
+import { playSuccessSound } from '@/utils/play-success-sound'
 
 export function SendUSDCFeature() {
   const { selectedAccount } = useAuthorization()
@@ -98,6 +99,7 @@ export function SendUSDCFeature() {
       // Sign and send transaction
       const signature = await signAndSendTransaction(tx, 0)
 
+      await playSuccessSound()
       Alert.alert('Success', `Transaction sent! Signature: ${signature.substring(0, 20)}...`)
 
       // Reset form
