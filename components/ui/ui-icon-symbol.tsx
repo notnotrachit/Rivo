@@ -18,6 +18,7 @@ const MAPPING = {
   'ladybug.fill': 'bug-report',
   'house.fill': 'home',
   'clock.fill': 'history',
+  'rectangle.portrait.and.arrow.right': 'logout',
 } as UiIconMapping
 
 /**

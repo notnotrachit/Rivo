@@ -1,78 +1,102 @@
-import { AppText } from '@/components/app-text';
-import { useAuth } from '@/components/auth/auth-provider';
-import { TwitterLinkFeature } from '@/components/social/twitter-link-feature';
-import { useAuthorization } from '@/components/solana/use-authorization';
-import { API_CONFIG } from '@/constants/api-config';
-import { AppConfig } from '@/constants/app-config';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { ellipsify } from '@/utils/ellipsify';
-import { getAssociatedTokenAddress } from '@solana/spl-token';
-import { Connection, PublicKey } from '@solana/web3.js';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppView } from '../../../components/app-view';
+import { AppText } from '@/components/app-text'
+import { useAuth } from '@/components/auth/auth-provider'
+import { TwitterLinkFeature } from '@/components/social/twitter-link-feature'
+import { useAuthorization } from '@/components/solana/use-authorization'
+import { UiIconSymbol } from '@/components/ui/ui-icon-symbol'
+import { API_CONFIG } from '@/constants/api-config'
+import { AppConfig } from '@/constants/app-config'
+import { useThemeColor } from '@/hooks/use-theme-color'
+import { ellipsify } from '@/utils/ellipsify'
+import { getAssociatedTokenAddress } from '@solana/spl-token'
+import { Connection, PublicKey } from '@solana/web3.js'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { AppView } from '../../../components/app-view'
 
 export default function HomePage() {
-  const { isAuthenticated, signOut } = useAuth();
-  const { selectedAccount } = useAuthorization();
-  const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
-  const [loadingBalance, setLoadingBalance] = useState(false);
-  
-  const textColor = useThemeColor({}, 'text');
-  const mutedText = useThemeColor({}, 'icon');
-  const borderColor = useThemeColor({}, 'border');
-  const cardBg = useThemeColor({}, 'background');
-  const tint = useThemeColor({}, 'tint');
+  const { isAuthenticated, signOut } = useAuth()
+  const { selectedAccount, deauthorizeSessions } = useAuthorization()
+  const [usdcBalance, setUsdcBalance] = useState<number | null>(null)
+  const [loadingBalance, setLoadingBalance] = useState(false)
+
+  const textColor = useThemeColor({}, 'text')
+  const mutedText = useThemeColor({}, 'icon')
+  const borderColor = useThemeColor({}, 'border')
+  const cardBg = useThemeColor({}, 'background')
+  const tint = useThemeColor({}, 'tint')
 
   // Fetch USDC balance
   useEffect(() => {
     const fetchBalance = async () => {
       if (!selectedAccount) {
-        setUsdcBalance(null);
-        return;
+        setUsdcBalance(null)
+        return
       }
 
       try {
-        setLoadingBalance(true);
-        const connection = new Connection(AppConfig.clusters[0].endpoint, 'confirmed');
-        const mintPubkey = new PublicKey(API_CONFIG.usdcMint);
-        const walletPubkey = selectedAccount.publicKey;
+        setLoadingBalance(true)
+        const connection = new Connection(AppConfig.clusters[0].endpoint, 'confirmed')
+        const mintPubkey = new PublicKey(API_CONFIG.usdcMint)
+        const walletPubkey = selectedAccount.publicKey
 
-        const tokenAccount = await getAssociatedTokenAddress(mintPubkey, walletPubkey);
-        const accountInfo = await connection.getTokenAccountBalance(tokenAccount);
+        const tokenAccount = await getAssociatedTokenAddress(mintPubkey, walletPubkey)
+        const accountInfo = await connection.getTokenAccountBalance(tokenAccount)
 
         if (accountInfo.value) {
           // Convert from lamports to USDC (6 decimals)
-          const balance = Number.parseFloat(accountInfo.value.amount) / 1_000_000;
-          setUsdcBalance(balance);
+          const balance = Number.parseFloat(accountInfo.value.amount) / 1_000_000
+          setUsdcBalance(balance)
         } else {
-          setUsdcBalance(0);
+          setUsdcBalance(0)
         }
       } catch (error) {
-        console.error('Failed to fetch USDC balance:', error);
-        setUsdcBalance(0);
+        console.error('Failed to fetch USDC balance:', error)
+        setUsdcBalance(0)
       } finally {
-        setLoadingBalance(false);
+        setLoadingBalance(false)
       }
-    };
+    }
 
-    fetchBalance();
-  }, [selectedAccount]);
+    fetchBalance()
+  }, [selectedAccount])
 
   return (
     <AppView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: 16 }]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingHorizontal: 16 }]}
+        >
           {/* Decorative backdrop */}
           <View style={[styles.backdropContainer]} pointerEvents="none">
-            <View style={[styles.backdropBlob, { backgroundColor: `${tint}44`, top: 120, left: -20, transform: [{ rotate: '18deg' }] }]} />
-            <View style={[styles.backdropBlob, { backgroundColor: `${tint}22`, top: 170, right: -10, transform: [{ rotate: '-12deg' }] }]} />
+            <View
+              style={[
+                styles.backdropBlob,
+                { backgroundColor: `${tint}44`, top: 120, left: -20, transform: [{ rotate: '18deg' }] },
+              ]}
+            />
+            <View
+              style={[
+                styles.backdropBlob,
+                { backgroundColor: `${tint}22`, top: 170, right: -10, transform: [{ rotate: '-12deg' }] },
+              ]}
+            />
           </View>
 
           {/* Header */}
           <View style={styles.header}>
-            <AppText type="title" style={[styles.headerTitle, { color: textColor }]}>Home</AppText>
+            <AppText type="title" style={[styles.headerTitle, { color: textColor }]}>
+              Home
+            </AppText>
+            {selectedAccount && (
+              <TouchableOpacity
+                style={[styles.disconnectButton, { backgroundColor: '#ef444420', borderColor: '#ef4444' }]}
+                onPress={deauthorizeSessions}
+              >
+                <UiIconSymbol name="rectangle.portrait.and.arrow.right" size={18} color="#ef4444" />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Wallet Status Card */}
@@ -91,17 +115,21 @@ export default function HomePage() {
 
             {selectedAccount && (
               <>
-                <View style={[styles.walletInfo, { borderTopColor: borderColor }] }>
+                <View style={[styles.walletInfo, { borderTopColor: borderColor }]}>
                   <AppText style={[styles.walletLabel, { color: mutedText }]}>Address</AppText>
                   <AppText style={[styles.walletAddress, { color: textColor }]}>
                     {ellipsify(selectedAccount.publicKey.toBase58(), 12)}
                   </AppText>
                 </View>
-                
-                <View style={[styles.walletInfo, { marginTop: 12, borderTopColor: borderColor }] }>
+
+                <View style={[styles.walletInfo, { marginTop: 12, borderTopColor: borderColor }]}>
                   <AppText style={[styles.walletLabel, { color: mutedText }]}>USDC Balance</AppText>
                   {loadingBalance ? (
-                    <ActivityIndicator size="small" color={mutedText} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
+                    <ActivityIndicator
+                      size="small"
+                      color={mutedText}
+                      style={{ alignSelf: 'flex-start', marginTop: 4 }}
+                    />
                   ) : (
                     <AppText style={[styles.balanceAmount, { color: textColor }]}>
                       {usdcBalance !== null ? `${usdcBalance.toFixed(2)} USDC` : '0.00 USDC'}
@@ -127,7 +155,7 @@ export default function HomePage() {
                 <View style={styles.emptyBadge} />
               </View>
               <AppText style={[styles.emptyStateTitle, { color: textColor }]}>Connect Your Wallet</AppText>
-              <AppText style={[styles.emptyStateText, { color: mutedText }]}> 
+              <AppText style={[styles.emptyStateText, { color: mutedText }]}>
                 Link your Solana wallet to unlock payments, airdrops, and social features.
               </AppText>
             </View>
@@ -135,7 +163,7 @@ export default function HomePage() {
         </ScrollView>
       </SafeAreaView>
     </AppView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -171,9 +199,12 @@ const styles = StyleSheet.create({
   header: {
     marginTop: 4,
     marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   headerTitle: {
-    marginBottom: 6,
+    marginBottom: 0,
   },
   headerSubtitle: {
     fontSize: 13,
@@ -300,4 +331,16 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: '#60a5fa',
   },
-});
+  disconnectButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disconnectButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+})
