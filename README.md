@@ -396,7 +396,15 @@ This project is open source and welcomes contributions:
 
 ## 🔗 Links
 
-- **GitHub**: https://github.com/notnotrachit/Rivo
+- **Mobile App GitHub**: https://github.com/notnotrachit/
+
+- **Smart Contracts GitHub**: https://github.com/arnabdotpy/cypherpunk
+
+- **Browser Extension GitHub**: https://github.com/arnabdotpy/cypherpunk
+
+- **Web Dashboard GitHub**: https://github.com/arnabdotpy/cypherpunk
+
+- **Web Dashboard**: https://rivo.rcht.dev
 
 ---
 
