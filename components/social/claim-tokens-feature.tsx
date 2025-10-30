@@ -1,111 +1,103 @@
-import {
-  buildClaimTransaction,
-  getPendingClaims,
-  lamportsToUsdc,
-  PendingClaim,
-} from '@/utils/send-money';
-import { Transaction } from '@solana/web3.js';
-import * as bs58 from 'bs58';
-import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { AppPage } from '../app-page';
-import { AppText } from '../app-text';
-import { useAuthorization } from '../solana/use-authorization';
-import { useMobileWallet } from '../solana/use-mobile-wallet';
+import { buildClaimTransaction, getPendingClaims, lamportsToUsdc, PendingClaim } from '@/utils/send-money'
+import { useThemeColor } from '@/hooks/use-theme-color'
+import { Transaction } from '@solana/web3.js'
+import * as bs58 from 'bs58'
+import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { AppPage } from '../app-page'
+import { AppText } from '../app-text'
+import { useAuthorization } from '../solana/use-authorization'
+import { useMobileWallet } from '../solana/use-mobile-wallet'
 
 interface Props {
-  socialHandle: string;
+  socialHandle: string
 }
 
 export function ClaimTokensFeature({ socialHandle }: Props) {
-  const { selectedAccount } = useAuthorization();
-  const { signAndSendTransaction } = useMobileWallet();
+  const { selectedAccount } = useAuthorization()
+  const { signAndSendTransaction } = useMobileWallet()
 
-  const [pendingClaim, setPendingClaim] = useState<PendingClaim | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Theme colors
+  const tintColor = useThemeColor({}, 'tint')
+
+  const [pendingClaim, setPendingClaim] = useState<PendingClaim | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchPendingClaims();
-  }, [socialHandle]);
+    fetchPendingClaims()
+  }, [socialHandle])
 
   const fetchPendingClaims = async () => {
     try {
-      setIsFetching(true);
-      setError(null);
+      setIsFetching(true)
+      setError(null)
 
-      const claim = await getPendingClaims(socialHandle);
-      setPendingClaim(claim);
+      const claim = await getPendingClaims(socialHandle)
+      setPendingClaim(claim)
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch pending claims');
+      setError(err.message || 'Failed to fetch pending claims')
     } finally {
-      setIsFetching(false);
+      setIsFetching(false)
     }
-  };
+  }
 
   const handleClaimTokens = async () => {
     if (!selectedAccount) {
-      Alert.alert('Error', 'Please connect your wallet first');
-      return;
+      Alert.alert('Error', 'Please connect your wallet first')
+      return
     }
 
     if (!pendingClaim || pendingClaim.amount === 0) {
-      Alert.alert('Error', 'No pending tokens to claim');
-      return;
+      Alert.alert('Error', 'No pending tokens to claim')
+      return
     }
 
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       // Build claim transaction
-      const txBase58 = await buildClaimTransaction(socialHandle);
+      const txBase58 = await buildClaimTransaction(socialHandle)
 
       // Decode transaction
-      const txBuffer = bs58.decode(txBase58);
-      const tx = Transaction.from(txBuffer);
+      const txBuffer = bs58.decode(txBase58)
+      const tx = Transaction.from(txBuffer)
 
       // Sign and send transaction
-      const signature = await signAndSendTransaction(tx, 0);
+      const signature = await signAndSendTransaction(tx, 0)
 
       Alert.alert(
         'Success',
-        `Claimed ${lamportsToUsdc(pendingClaim.amount)} USDC! Signature: ${signature.substring(0, 20)}...`
-      );
+        `Claimed ${lamportsToUsdc(pendingClaim.amount)} USDC! Signature: ${signature.substring(0, 20)}...`,
+      )
 
       // Refresh pending claims
-      await fetchPendingClaims();
+      await fetchPendingClaims()
     } catch (err: any) {
-      setError(err.message || 'Failed to claim tokens');
+      setError(err.message || 'Failed to claim tokens')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   if (isFetching) {
     return (
       <AppPage>
         <View style={styles.container}>
-          <ActivityIndicator size="large" color="#5865F2" />
+          <ActivityIndicator size="large" color={tintColor} />
           <AppText style={styles.loadingText}>Checking pending claims...</AppText>
         </View>
       </AppPage>
-    );
+    )
   }
 
   if (!pendingClaim || pendingClaim.amount === 0 || pendingClaim.claimed) {
-    return null;
+    return null
   }
 
-  const amountInUsdc = lamportsToUsdc(pendingClaim.amount);
+  const amountInUsdc = lamportsToUsdc(pendingClaim.amount)
 
   return (
     <AppPage>
@@ -122,11 +114,7 @@ export function ClaimTokensFeature({ socialHandle }: Props) {
             onPress={handleClaimTokens}
             disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.claimButtonText}>Claim Tokens</Text>
-            )}
+            {loading ? <ActivityIndicator color="white" /> : <Text style={styles.claimButtonText}>Claim Tokens</Text>}
           </TouchableOpacity>
 
           {error && (
@@ -137,7 +125,7 @@ export function ClaimTokensFeature({ socialHandle }: Props) {
         </View>
       </View>
     </AppPage>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -205,4 +193,4 @@ const styles = StyleSheet.create({
     color: '#fca5a5',
     fontSize: 14,
   },
-});
+})

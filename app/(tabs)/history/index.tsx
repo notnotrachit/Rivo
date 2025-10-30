@@ -7,8 +7,9 @@ import React, { useEffect, useState } from 'react'
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 export default function TabHistoryScreen() {
-  const textColor = useThemeColor({ light: '#000000', dark: '#ffffff' }, 'text')
-  const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#333333' }, 'border')
+  const textColor = useThemeColor({}, 'text')
+  const borderColor = useThemeColor({}, 'border')
+  const backgroundColor = useThemeColor({}, 'background')
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,21 +30,17 @@ export default function TabHistoryScreen() {
   }
 
   const handleClearHistory = () => {
-    Alert.alert(
-      'Clear History',
-      'Are you sure you want to clear all transaction history?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: async () => {
-            await clearTransactionHistory()
-            setTransactions([])
-          },
+    Alert.alert('Clear History', 'Are you sure you want to clear all transaction history?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: async () => {
+          await clearTransactionHistory()
+          setTransactions([])
         },
-      ]
-    )
+      },
+    ])
   }
 
   const formatTimestamp = (timestamp: number) => {
@@ -58,7 +55,7 @@ export default function TabHistoryScreen() {
     if (minutes < 60) return `${minutes}m ago`
     if (hours < 24) return `${hours}h ago`
     if (days < 7) return `${days}d ago`
-    
+
     return date.toLocaleDateString()
   }
 
@@ -72,9 +69,7 @@ export default function TabHistoryScreen() {
           <WalletUiDropdown />
         </View>
         <View style={styles.emptyContainer}>
-          <AppText style={[styles.emptyText, { color: textColor, opacity: 0.6 }]}>
-            Loading...
-          </AppText>
+          <AppText style={[styles.emptyText, { color: textColor, opacity: 0.6 }]}>Loading...</AppText>
         </View>
       </AppPage>
     )
@@ -89,18 +84,14 @@ export default function TabHistoryScreen() {
         <WalletUiDropdown />
       </View>
 
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={loadTransactions} tintColor={textColor} />
-        }
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadTransactions} tintColor={textColor} />}
       >
         {transactions.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <AppText style={[styles.emptyText, { color: textColor, opacity: 0.6 }]}>
-              No transactions yet
-            </AppText>
+            <AppText style={[styles.emptyText, { color: textColor, opacity: 0.6 }]}>No transactions yet</AppText>
             <AppText style={[styles.emptySubtext, { color: textColor, opacity: 0.4 }]}>
               Your transaction history will appear here
             </AppText>
@@ -108,55 +99,45 @@ export default function TabHistoryScreen() {
         ) : (
           <>
             {transactions.map((tx) => (
-              <View key={tx.id} style={[styles.transactionCard, { borderColor }]}>
+              <View key={tx.id} style={[styles.transactionCard, { borderColor, backgroundColor: '#1a1a1a' }]}>
                 <View style={styles.transactionHeader}>
                   <View style={styles.transactionHeaderLeft}>
-                    <View style={[styles.transactionIcon, tx.flow === 'linked' ? styles.iconLinked : styles.iconUnlinked]}>
-                      <Text style={styles.transactionIconText}>
-                        {tx.flow === 'linked' ? '✓' : '⏳'}
-                      </Text>
+                    <View
+                      style={[styles.transactionIcon, tx.flow === 'linked' ? styles.iconLinked : styles.iconUnlinked]}
+                    >
+                      <Text style={styles.transactionIconText}>{tx.flow === 'linked' ? '✓' : '⏳'}</Text>
                     </View>
                     <View>
-                      <AppText style={[styles.recipientName, { color: textColor }]}>
-                        {tx.recipient}
-                      </AppText>
+                      <AppText style={[styles.recipientName, { color: textColor }]}>{tx.recipient}</AppText>
                       <AppText style={[styles.timestamp, { color: textColor, opacity: 0.6 }]}>
                         {formatTimestamp(tx.timestamp)}
                       </AppText>
                     </View>
                   </View>
                   <View style={styles.amountContainer}>
-                    <AppText style={[styles.amount, { color: textColor }]}>
-                      {tx.amount} USDC
-                    </AppText>
+                    <AppText style={styles.amount}>{tx.amount} USDC</AppText>
                   </View>
                 </View>
 
                 <View style={styles.statusRow}>
-                  <AppText style={[styles.statusLabel, { color: textColor, opacity: 0.7 }]}>
-                    Status:{' '}
-                  </AppText>
+                  <AppText style={[styles.statusLabel, { color: textColor, opacity: 0.7 }]}>Status: </AppText>
                   <AppText style={[styles.statusValue, { color: tx.flow === 'linked' ? '#10b981' : '#3b82f6' }]}>
                     {tx.flow === 'linked' ? 'Direct Transfer' : 'Escrow'}
                   </AppText>
                 </View>
 
-                <View style={styles.signatureRow}>
+                <View style={[styles.signatureRow, { borderTopColor: borderColor }]}>
                   <AppText style={[styles.signatureLabel, { color: textColor, opacity: 0.5 }]}>
-                    {tx.transactionSignature.substring(0, 8)}...{tx.transactionSignature.substring(tx.transactionSignature.length - 8)}
+                    {tx.transactionSignature.substring(0, 8)}...
+                    {tx.transactionSignature.substring(tx.transactionSignature.length - 8)}
                   </AppText>
                 </View>
               </View>
             ))}
 
             {transactions.length > 0 && (
-              <TouchableOpacity
-                style={[styles.clearButton, { borderColor }]}
-                onPress={handleClearHistory}
-              >
-                <Text style={[styles.clearButtonText, { color: '#ef4444' }]}>
-                  Clear History
-                </Text>
+              <TouchableOpacity style={[styles.clearButton, { borderColor }]} onPress={handleClearHistory}>
+                <Text style={[styles.clearButtonText, { color: '#ef4444' }]}>Clear History</Text>
               </TouchableOpacity>
             )}
           </>
@@ -202,7 +183,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   transactionCard: {
-    backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -268,7 +248,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#333333',
   },
   signatureLabel: {
     fontSize: 11,
@@ -286,4 +265,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 })
-

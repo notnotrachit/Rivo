@@ -1,74 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { View, Alert, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
-import { AppText } from '../app-text';
-import { AppView } from '../app-view';
-import { Button } from '@react-navigation/elements';
-import { useAuthorization } from '../solana/use-authorization';
-import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import { Transaction } from '@solana/web3.js';
-import { API_CONFIG } from '@/constants/api-config';
-import { Base64 } from 'js-base64';
+import React, { useState, useEffect } from 'react'
+import { View, Alert, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native'
+import { AppText } from '../app-text'
+import { AppView } from '../app-view'
+import { Button } from '@react-navigation/elements'
+import { useAuthorization } from '../solana/use-authorization'
+import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js'
+import { Transaction } from '@solana/web3.js'
+import { API_CONFIG } from '@/constants/api-config'
+import { Base64 } from 'js-base64'
+import { useThemeColor } from '@/hooks/use-theme-color'
 
 interface PendingClaim {
-  handle: string;
-  amount: number;
-  sender: string;
-  paymentCount: number;
-  pda: string;
+  handle: string
+  amount: number
+  sender: string
+  paymentCount: number
+  pda: string
 }
 
 interface PaymentHistory {
   payments: Array<{
-    sender: string;
-    amount: number;
-    timestamp: number;
-    pda: string;
-  }>;
+    sender: string
+    amount: number
+    timestamp: number
+    pda: string
+  }>
 }
 
 export function ClaimFundsFeature() {
-  const { selectedAccount, authorizeSession } = useAuthorization();
-  const [pendingClaims, setPendingClaims] = useState<PendingClaim[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [claiming, setClaiming] = useState(false);
-  const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory | null>(null);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const { selectedAccount, authorizeSession } = useAuthorization()
+  const [pendingClaims, setPendingClaims] = useState<PendingClaim[]>([])
+  const [loading, setLoading] = useState(false)
+  const [claiming, setClaiming] = useState(false)
+  const [expandedClaim, setExpandedClaim] = useState<string | null>(null)
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory | null>(null)
+  const [loadingHistory, setLoadingHistory] = useState(false)
 
   const checkPendingClaims = async () => {
     if (!selectedAccount) {
-      Alert.alert('Error', 'Please connect your wallet first');
-      return;
+      Alert.alert('Error', 'Please connect your wallet first')
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.pendingClaims}`, {
         headers: {
           'x-wallet-address': selectedAccount.publicKey.toBase58(),
         },
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to check pending claims');
+        throw new Error(data.error || 'Failed to check pending claims')
       }
 
-      setPendingClaims(data.claims || []);
+      setPendingClaims(data.claims || [])
 
       if (data.claims.length === 0) {
-        Alert.alert('No Claims', 'No pending claims found');
+        Alert.alert('No Claims', 'No pending claims found')
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to check pending claims');
+      Alert.alert('Error', error.message || 'Failed to check pending claims')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const loadPaymentHistory = async (handle: string) => {
-    setLoadingHistory(true);
+    setLoadingHistory(true)
     try {
       const response = await fetch(
         `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.paymentHistory}?handle=${encodeURIComponent(handle)}`,
@@ -76,28 +77,28 @@ export function ClaimFundsFeature() {
           headers: {
             'x-wallet-address': selectedAccount!.publicKey.toBase58(),
           },
-        }
-      );
+        },
+      )
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error('Failed to load payment history');
+        throw new Error('Failed to load payment history')
       }
 
-      setPaymentHistory(data);
-      setExpandedClaim(handle);
+      setPaymentHistory(data)
+      setExpandedClaim(handle)
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to load payment history');
+      Alert.alert('Error', error.message || 'Failed to load payment history')
     } finally {
-      setLoadingHistory(false);
+      setLoadingHistory(false)
     }
-  };
+  }
 
   const claimFunds = async (handle: string) => {
-    if (!selectedAccount) return;
+    if (!selectedAccount) return
 
-    setClaiming(true);
+    setClaiming(true)
     try {
       // Build claim transaction
       const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.buildClaimTransaction}`, {
@@ -107,47 +108,42 @@ export function ClaimFundsFeature() {
           'x-wallet-address': selectedAccount.publicKey.toBase58(),
         },
         body: JSON.stringify({ socialHandle: handle }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to build claim transaction');
+        throw new Error(data.error || 'Failed to build claim transaction')
       }
 
       // Decode transaction
-      const transactionBuffer = Base64.toUint8Array(data.transaction);
-      const transaction = Transaction.from(transactionBuffer);
+      const transactionBuffer = Base64.toUint8Array(data.transaction)
+      const transaction = Transaction.from(transactionBuffer)
 
       // Sign and send with Mobile Wallet Adapter
       await transact(async (wallet) => {
-        const authResult = await authorizeSession(wallet);
-        
+        const authResult = await authorizeSession(wallet)
+
         const signedTransactions = await wallet.signAndSendTransactions({
           transactions: [transaction],
-        });
+        })
 
-        Alert.alert(
-          'Success',
-          `Successfully claimed ${data.amount / 1_000_000} USDC!`
-        );
+        Alert.alert('Success', `Successfully claimed ${data.amount / 1_000_000} USDC!`)
 
         // Refresh claims
-        setTimeout(() => checkPendingClaims(), 2000);
-      });
+        setTimeout(() => checkPendingClaims(), 2000)
+      })
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to claim funds');
+      Alert.alert('Error', error.message || 'Failed to claim funds')
     } finally {
-      setClaiming(false);
+      setClaiming(false)
     }
-  };
+  }
 
   return (
     <AppView>
       <ScrollView style={{ flex: 1, padding: 20 }}>
-        <AppText style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>
-          Claim Pending Funds
-        </AppText>
+        <AppText style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>Claim Pending Funds</AppText>
         <AppText style={{ marginBottom: 20, opacity: 0.7 }}>
           Check if anyone has sent you USDC before you linked your wallet
         </AppText>
@@ -158,9 +154,7 @@ export function ClaimFundsFeature() {
 
         {pendingClaims.length > 0 && (
           <View style={{ marginTop: 20 }}>
-            <AppText style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
-              Pending Claims:
-            </AppText>
+            <AppText style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Pending Claims:</AppText>
             {pendingClaims.map((claim, index) => (
               <View
                 key={index}
@@ -191,10 +185,10 @@ export function ClaimFundsFeature() {
                 <TouchableOpacity
                   onPress={() => {
                     if (expandedClaim === claim.handle) {
-                      setExpandedClaim(null);
-                      setPaymentHistory(null);
+                      setExpandedClaim(null)
+                      setPaymentHistory(null)
                     } else {
-                      loadPaymentHistory(claim.handle);
+                      loadPaymentHistory(claim.handle)
                     }
                   }}
                   disabled={loadingHistory}
@@ -204,8 +198,8 @@ export function ClaimFundsFeature() {
                     {loadingHistory && expandedClaim === claim.handle
                       ? 'Loading...'
                       : expandedClaim === claim.handle
-                      ? 'Hide payment history'
-                      : 'View payment history'}
+                        ? 'Hide payment history'
+                        : 'View payment history'}
                   </AppText>
                 </TouchableOpacity>
 
@@ -241,10 +235,7 @@ export function ClaimFundsFeature() {
                 )}
 
                 <View style={{ marginTop: 10 }}>
-                  <Button
-                    onPress={() => claimFunds(claim.handle)}
-                    disabled={claiming}
-                  >
+                  <Button onPress={() => claimFunds(claim.handle)} disabled={claiming}>
                     {claiming ? <ActivityIndicator color="#fff" /> : <AppText>Claim</AppText>}
                   </Button>
                 </View>
@@ -260,5 +251,5 @@ export function ClaimFundsFeature() {
         )}
       </ScrollView>
     </AppView>
-  );
+  )
 }

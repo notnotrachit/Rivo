@@ -1,21 +1,22 @@
-import { AppText } from '@/components/app-text';
-import { useAuthorization } from '@/components/solana/use-authorization';
-import { useMobileWallet } from '@/components/solana/use-mobile-wallet';
+import { AppText } from '@/components/app-text'
+import { useAuthorization } from '@/components/solana/use-authorization'
+import { useMobileWallet } from '@/components/solana/use-mobile-wallet'
+import { useThemeColor } from '@/hooks/use-theme-color'
 import {
   buildLinkedTransaction,
   buildUnlinkedTransaction,
   checkRecipient,
   SendFlow,
   usdcToLamports,
-} from '@/utils/send-money';
-import { generateTransactionId, saveTransaction } from '@/utils/transaction-history';
-import { extractHandleFromShareIntent } from '@/utils/twitter-handle-extractor';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Transaction } from '@solana/web3.js';
-import bs58 from 'bs58';
-import { useRouter } from 'expo-router';
-import { useShareIntentContext } from 'expo-share-intent';
-import React, { useEffect, useState } from 'react';
+} from '@/utils/send-money'
+import { generateTransactionId, saveTransaction } from '@/utils/transaction-history'
+import { extractHandleFromShareIntent } from '@/utils/twitter-handle-extractor'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Transaction } from '@solana/web3.js'
+import bs58 from 'bs58'
+import { useRouter } from 'expo-router'
+import { useShareIntentContext } from 'expo-share-intent'
+import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -26,212 +27,213 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from 'react-native'
 
 export default function ShareHandlerScreen() {
-  const router = useRouter();
-  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
-  const { selectedAccount } = useAuthorization();
-  const { signAndSendTransaction } = useMobileWallet();
+  const router = useRouter()
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext()
+  const { selectedAccount } = useAuthorization()
+  const { signAndSendTransaction } = useMobileWallet()
 
-  const [recipient, setRecipient] = useState('');
-  const [amount, setAmount] = useState('');
-  const [flow, setFlow] = useState<SendFlow>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [recipientWallet, setRecipientWallet] = useState<string | null>(null);
-  const [isProcessingShare, setIsProcessingShare] = useState(true);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [transactionSignature, setTransactionSignature] = useState<string | null>(null);
-  const [hasProcessedIntent, setHasProcessedIntent] = useState(false);
-  const [isTransacting, setIsTransacting] = useState(false);
+  // Theme colors
+  const textColor = useThemeColor({}, 'text')
+  const borderColor = useThemeColor({}, 'border')
+  const backgroundColor = useThemeColor({}, 'background')
+  const tintColor = useThemeColor({}, 'tint')
+
+  const [recipient, setRecipient] = useState('')
+  const [amount, setAmount] = useState('')
+  const [flow, setFlow] = useState<SendFlow>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [recipientWallet, setRecipientWallet] = useState<string | null>(null)
+  const [isProcessingShare, setIsProcessingShare] = useState(true)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [transactionSignature, setTransactionSignature] = useState<string | null>(null)
+  const [hasProcessedIntent, setHasProcessedIntent] = useState(false)
+  const [isTransacting, setIsTransacting] = useState(false)
 
   // Restore transaction state on mount (in case app was backgrounded)
   useEffect(() => {
     const restoreState = async () => {
       try {
-        const savedState = await AsyncStorage.getItem('pendingTransaction');
+        const savedState = await AsyncStorage.getItem('pendingTransaction')
         if (savedState) {
-          const state = JSON.parse(savedState);
-          console.log('Restoring transaction state:', state);
-          setRecipient(state.recipient);
-          setAmount(state.amount);
-          setFlow(state.flow);
-          setRecipientWallet(state.recipientWallet);
-          setIsTransacting(true);
-          setHasProcessedIntent(true);
-          setIsProcessingShare(false);
+          const state = JSON.parse(savedState)
+          console.log('Restoring transaction state:', state)
+          setRecipient(state.recipient)
+          setAmount(state.amount)
+          setFlow(state.flow)
+          setRecipientWallet(state.recipientWallet)
+          setIsTransacting(true)
+          setHasProcessedIntent(true)
+          setIsProcessingShare(false)
         }
       } catch (e) {
-        console.error('Failed to restore state:', e);
+        console.error('Failed to restore state:', e)
       }
-    };
-    restoreState();
-  }, []);
+    }
+    restoreState()
+  }, [])
 
   // Process share intent on mount
   useEffect(() => {
-    console.log('ShareHandlerScreen mounted');
-    console.log('hasShareIntent:', hasShareIntent);
-    console.log('shareIntent:', shareIntent);
-    console.log('isTransacting:', isTransacting);
-    console.log('showSuccess:', showSuccess);
-    
+    console.log('ShareHandlerScreen mounted')
+    console.log('hasShareIntent:', hasShareIntent)
+    console.log('shareIntent:', shareIntent)
+    console.log('isTransacting:', isTransacting)
+    console.log('showSuccess:', showSuccess)
+
     // Don't redirect if we're in the middle of a transaction or showing success
     if (isTransacting || showSuccess) {
-      console.log('Transaction in progress or success shown, not redirecting');
-      setIsProcessingShare(false);
-      return;
+      console.log('Transaction in progress or success shown, not redirecting')
+      setIsProcessingShare(false)
+      return
     }
-    
+
     if (hasShareIntent && shareIntent && !hasProcessedIntent) {
-      const handle = extractHandleFromShareIntent(shareIntent);
-      console.log('Extracted handle:', handle);
-      
+      const handle = extractHandleFromShareIntent(shareIntent)
+      console.log('Extracted handle:', handle)
+
       if (handle) {
-        setRecipient(handle);
-        setHasProcessedIntent(true); // Mark as processed
+        setRecipient(handle)
+        setHasProcessedIntent(true) // Mark as processed
         // Auto-check recipient
-        checkRecipientAuto(handle);
+        checkRecipientAuto(handle)
       } else {
-        setError('Could not extract Twitter handle from shared content');
-        setIsProcessingShare(false);
+        setError('Could not extract Twitter handle from shared content')
+        setIsProcessingShare(false)
       }
     } else if (!hasShareIntent && !hasProcessedIntent) {
       // Only redirect if we never processed a share intent
-      console.log('No share intent, redirecting to home');
-      setIsProcessingShare(false);
-      router.replace('/(tabs)');
+      console.log('No share intent, redirecting to home')
+      setIsProcessingShare(false)
+      router.replace('/(tabs)')
     } else {
       // Share intent was processed, just stop loading
-      setIsProcessingShare(false);
+      setIsProcessingShare(false)
     }
-  }, [hasShareIntent, shareIntent, hasProcessedIntent, isTransacting, showSuccess]);
+  }, [hasShareIntent, shareIntent, hasProcessedIntent, isTransacting, showSuccess])
 
   const checkRecipientAuto = async (handle: string) => {
-    console.log('checkRecipientAuto called with handle:', handle);
+    console.log('checkRecipientAuto called with handle:', handle)
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
-      console.log('Calling checkRecipient API...');
-      const result = await checkRecipient(handle);
-      console.log('checkRecipient result:', result);
+      console.log('Calling checkRecipient API...')
+      const result = await checkRecipient(handle)
+      console.log('checkRecipient result:', result)
 
       if (result.error) {
-        console.log('Error from checkRecipient:', result.error);
-        setError(result.error);
-        setFlow(null);
+        console.log('Error from checkRecipient:', result.error)
+        setError(result.error)
+        setFlow(null)
       } else {
-        console.log('Setting flow:', result.flow);
-        setFlow(result.flow);
-        setRecipientWallet(result.recipientWallet || null);
+        console.log('Setting flow:', result.flow)
+        setFlow(result.flow)
+        setRecipientWallet(result.recipientWallet || null)
       }
     } catch (err: any) {
-      console.error('Exception in checkRecipientAuto:', err);
-      setError(err.message || 'Failed to check recipient');
-      setFlow(null);
+      console.error('Exception in checkRecipientAuto:', err)
+      setError(err.message || 'Failed to check recipient')
+      setFlow(null)
     } finally {
-      console.log('checkRecipientAuto finished, setting loading to false');
-      setLoading(false);
-      setIsProcessingShare(false);
+      console.log('checkRecipientAuto finished, setting loading to false')
+      setLoading(false)
+      setIsProcessingShare(false)
     }
-  };
+  }
 
   const handleCheckRecipient = async () => {
     if (!recipient.trim()) {
-      Alert.alert('Error', 'Please enter a recipient');
-      return;
+      Alert.alert('Error', 'Please enter a recipient')
+      return
     }
 
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
-      const result = await checkRecipient(recipient);
+      const result = await checkRecipient(recipient)
 
       if (result.error) {
-        setError(result.error);
-        setFlow(null);
+        setError(result.error)
+        setFlow(null)
       } else {
-        setFlow(result.flow);
-        setRecipientWallet(result.recipientWallet || null);
+        setFlow(result.flow)
+        setRecipientWallet(result.recipientWallet || null)
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to check recipient');
-      setFlow(null);
+      setError(err.message || 'Failed to check recipient')
+      setFlow(null)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSendMoney = async () => {
     if (!selectedAccount) {
-      Alert.alert('Error', 'Please connect your wallet first');
-      return;
+      Alert.alert('Error', 'Please connect your wallet first')
+      return
     }
 
     if (!amount.trim()) {
-      Alert.alert('Error', 'Please enter an amount');
-      return;
+      Alert.alert('Error', 'Please enter an amount')
+      return
     }
 
     if (!flow || !recipientWallet) {
-      Alert.alert('Error', 'Please check recipient first');
-      return;
+      Alert.alert('Error', 'Please check recipient first')
+      return
     }
 
     try {
-      setLoading(true);
-      setError(null);
-      setIsTransacting(true); // Mark transaction as in progress
+      setLoading(true)
+      setError(null)
+      setIsTransacting(true) // Mark transaction as in progress
 
       // Save state before opening Phantom (in case app gets backgrounded)
-      await AsyncStorage.setItem('pendingTransaction', JSON.stringify({
-        recipient,
-        amount,
-        flow,
-        recipientWallet,
-      }));
-      console.log('Saved transaction state to AsyncStorage');
+      await AsyncStorage.setItem(
+        'pendingTransaction',
+        JSON.stringify({
+          recipient,
+          amount,
+          flow,
+          recipientWallet,
+        }),
+      )
+      console.log('Saved transaction state to AsyncStorage')
 
-      const senderWallet = selectedAccount.publicKey.toBase58();
-      const amountInLamports = usdcToLamports(parseFloat(amount));
+      const senderWallet = selectedAccount.publicKey.toBase58()
+      const amountInLamports = usdcToLamports(parseFloat(amount))
 
       // Build transaction based on flow
-      let txBase58: string;
+      let txBase58: string
 
       if (flow === 'linked') {
-        console.log('Building LINKED transaction...');
-        txBase58 = await buildLinkedTransaction(
-          senderWallet,
-          recipientWallet,
-          amountInLamports
-        );
-        console.log('Linked transaction built successfully');
+        console.log('Building LINKED transaction...')
+        txBase58 = await buildLinkedTransaction(senderWallet, recipientWallet, amountInLamports)
+        console.log('Linked transaction built successfully')
       } else {
-        console.log('Building UNLINKED transaction for handle:', recipientWallet);
-        txBase58 = await buildUnlinkedTransaction(
-          senderWallet,
-          recipientWallet,
-          amountInLamports
-        );
-        console.log('Unlinked transaction built successfully');
+        console.log('Building UNLINKED transaction for handle:', recipientWallet)
+        txBase58 = await buildUnlinkedTransaction(senderWallet, recipientWallet, amountInLamports)
+        console.log('Unlinked transaction built successfully')
       }
 
       // Decode transaction
-      const txBuffer = bs58.decode(txBase58);
-      const tx = Transaction.from(txBuffer);
+      const txBuffer = bs58.decode(txBase58)
+      const tx = Transaction.from(txBuffer)
 
-      console.log('About to call signAndSendTransaction...');
+      console.log('About to call signAndSendTransaction...')
       // Sign and send transaction (this will open Phantom)
-      const signature = await signAndSendTransaction(tx, 0);
-      console.log('Transaction signature received:', signature);
+      const signature = await signAndSendTransaction(tx, 0)
+      console.log('Transaction signature received:', signature)
 
       // Clear saved state and show success screen
-      await AsyncStorage.removeItem('pendingTransaction');
-      console.log('Cleared transaction state from AsyncStorage');
-      
+      await AsyncStorage.removeItem('pendingTransaction')
+      console.log('Cleared transaction state from AsyncStorage')
+
       // Save transaction to history
       try {
         await saveTransaction({
@@ -240,67 +242,65 @@ export default function ShareHandlerScreen() {
           amount,
           flow: flow!,
           transactionSignature: signature,
-        });
-        console.log('Transaction saved to history');
+        })
+        console.log('Transaction saved to history')
       } catch (saveError) {
-        console.error('Failed to save transaction to history:', saveError);
+        console.error('Failed to save transaction to history:', saveError)
       }
-      
-      setTransactionSignature(signature);
-      setShowSuccess(true);
-      console.log('Success screen should now be visible');
+
+      setTransactionSignature(signature)
+      setShowSuccess(true)
+      console.log('Success screen should now be visible')
     } catch (err: any) {
-      console.error('Transaction error:', err);
-      setError(err.message || 'Failed to send money');
-      setIsTransacting(false); // Reset on error
+      console.error('Transaction error:', err)
+      setError(err.message || 'Failed to send money')
+      setIsTransacting(false) // Reset on error
       // Clear saved state on error
-      await AsyncStorage.removeItem('pendingTransaction');
+      await AsyncStorage.removeItem('pendingTransaction')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleCancel = () => {
-    resetShareIntent();
-    router.replace('/(tabs)');
-  };
+    resetShareIntent()
+    router.replace('/(tabs)')
+  }
 
   if (isProcessingShare) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#5865F2" />
+          <ActivityIndicator size="large" color={tintColor} />
           <AppText style={styles.loadingText}>Processing shared content...</AppText>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   // Success Screen
   if (showSuccess && transactionSignature) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
         <View style={styles.successContainer}>
           <View style={styles.successIconContainer}>
             <Text style={styles.successIcon}>✓</Text>
           </View>
-          
+
           <AppText style={styles.successTitle}>Transaction Sent!</AppText>
-          <AppText style={styles.successSubtitle}>
-            Your USDC has been sent successfully
-          </AppText>
+          <AppText style={styles.successSubtitle}>Your USDC has been sent successfully</AppText>
 
           <View style={styles.successDetailsCard}>
             <View style={styles.successDetailRow}>
               <AppText style={styles.successDetailLabel}>Recipient</AppText>
               <AppText style={styles.successDetailValue}>{recipient}</AppText>
             </View>
-            
+
             <View style={styles.successDetailRow}>
               <AppText style={styles.successDetailLabel}>Amount</AppText>
               <AppText style={styles.successDetailValue}>{amount} USDC</AppText>
             </View>
-            
+
             <View style={styles.successDetailRow}>
               <AppText style={styles.successDetailLabel}>Status</AppText>
               <AppText style={styles.successDetailValue}>
@@ -308,30 +308,36 @@ export default function ShareHandlerScreen() {
               </AppText>
             </View>
 
-            <View style={[styles.successDetailRow, { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#333' }]}>
+            <View
+              style={[
+                styles.successDetailRow,
+                { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#333' },
+              ]}
+            >
               <AppText style={styles.successDetailLabel}>Transaction</AppText>
               <AppText style={styles.successDetailValueSmall} numberOfLines={1}>
-                {transactionSignature.substring(0, 8)}...{transactionSignature.substring(transactionSignature.length - 8)}
+                {transactionSignature.substring(0, 8)}...
+                {transactionSignature.substring(transactionSignature.length - 8)}
               </AppText>
             </View>
           </View>
 
           <TouchableOpacity
-            style={styles.successButton}
+            style={[styles.successButton, { backgroundColor: tintColor }]}
             onPress={() => {
-              resetShareIntent();
-              router.replace('/(tabs)');
+              resetShareIntent()
+              router.replace('/(tabs)')
             }}
           >
             <Text style={styles.successButtonText}>Done</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
           <View style={styles.header}>
@@ -341,26 +347,19 @@ export default function ShareHandlerScreen() {
             </TouchableOpacity>
           </View>
 
-          <AppText style={styles.subtitle}>
-            Send USDC to this Twitter account
-          </AppText>
+          <AppText style={styles.subtitle}>Send USDC to this Twitter account</AppText>
 
           {/* Recipient Display */}
           <View style={styles.section}>
             <AppText style={styles.label}>Recipient</AppText>
-            <View style={styles.recipientDisplay}>
+            <View style={[styles.recipientDisplay, { backgroundColor: '#1E1D3A', borderColor }]}>
               <AppText style={styles.recipientText}>{recipient}</AppText>
             </View>
           </View>
 
           {/* Flow Status */}
           {flow && (
-            <View
-              style={[
-                styles.statusCard,
-                flow === 'linked' ? styles.statusLinked : styles.statusUnlinked,
-              ]}
-            >
+            <View style={[styles.statusCard, flow === 'linked' ? styles.statusLinked : styles.statusUnlinked]}>
               <AppText style={styles.statusText}>
                 {flow === 'linked'
                   ? '✓ Recipient has linked account - direct transfer'
@@ -374,27 +373,20 @@ export default function ShareHandlerScreen() {
             <View style={styles.section}>
               <AppText style={styles.label}>Amount (USDC)</AppText>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor, backgroundColor: '#1E1D3A', color: textColor }]}
                 placeholder="0.00"
+                placeholderTextColor={borderColor}
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="decimal-pad"
                 editable={!loading}
               />
               <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.sendButton,
-                  loading && styles.buttonDisabled,
-                ]}
+                style={[styles.button, { backgroundColor: '#10b981' }, loading && styles.buttonDisabled]}
                 onPress={handleSendMoney}
                 disabled={loading || !amount.trim()}
               >
-                {loading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.buttonText}>Send Money</Text>
-                )}
+                {loading ? <ActivityIndicator color="white" /> : <Text style={styles.buttonText}>Send Money</Text>}
               </TouchableOpacity>
             </View>
           )}
@@ -409,15 +401,13 @@ export default function ShareHandlerScreen() {
           {/* Info Message */}
           {!selectedAccount && (
             <View style={styles.infoCard}>
-              <AppText style={styles.infoText}>
-                Please connect your wallet to send USDC
-              </AppText>
+              <AppText style={styles.infoText}>Please connect your wallet to send USDC</AppText>
             </View>
           )}
         </View>
       </ScrollView>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -469,11 +459,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   recipientDisplay: {
-    backgroundColor: '#1a1a1a',
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#333333',
   },
   recipientText: {
     fontSize: 18,
@@ -482,16 +470,12 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#333333',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
-    backgroundColor: '#1a1a1a',
-    color: '#ffffff',
   },
   button: {
-    backgroundColor: '#5865F2',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -612,7 +596,6 @@ const styles = StyleSheet.create({
     maxWidth: 150,
   },
   successButton: {
-    backgroundColor: '#5865F2',
     paddingVertical: 16,
     paddingHorizontal: 48,
     borderRadius: 12,
@@ -624,4 +607,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
-});
+})
