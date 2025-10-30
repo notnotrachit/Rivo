@@ -172,7 +172,7 @@ export function TwitterLinkFeature() {
 
       {linkedTwitter ? (
         // Linked Account Display
-        <View style={styles.linkedCard}>
+        <View style={[styles.linkedCard, { backgroundColor, borderColor: tint }]}>
           <View style={styles.linkedContent}>
             {linkedTwitter.profileImageUrl ? (
               <Image
@@ -194,23 +194,23 @@ export function TwitterLinkFeature() {
               <AppText style={[styles.linkedHandle, { color: mutedText }]}>
                 @{linkedTwitter.username}
               </AppText>
-              <View style={styles.linkedBadge}>
-                <View style={styles.linkedBadgeDot} />
-                <AppText style={styles.linkedBadgeText}>Linked to Wallet</AppText>
+              <View style={[styles.linkedBadge, { borderColor: tint }]}>
+                <View style={[styles.linkedBadgeDot, { backgroundColor: tint }]} />
+                <AppText style={[styles.linkedBadgeText, { color: tint }]}>Linked to Wallet</AppText>
               </View>
             </View>
           </View>
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.button, styles.relinkButton]}
+              style={[styles.button, styles.relinkButton, { borderColor: tint }]}
               onPress={handleLinkTwitter}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={textColor} size="small" />
+                <ActivityIndicator color={tint} size="small" />
               ) : (
-                <AppText style={styles.relinkButtonText}>Relink</AppText>
+                <AppText style={[styles.relinkButtonText, { color: tint }]}>Relink</AppText>
               )}
             </TouchableOpacity>
 
@@ -296,6 +296,9 @@ const styles = StyleSheet.create({
   },
   linkedCard: {
     marginBottom: 0,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
   },
   linkedContent: {
     flexDirection: 'row',
@@ -336,11 +339,11 @@ const styles = StyleSheet.create({
   linkedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#14532d',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 999,
     alignSelf: 'flex-start',
+    borderWidth: 1,
   },
   linkedBadgeDot: {
     width: 6,
@@ -350,7 +353,6 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   linkedBadgeText: {
-    color: '#86efac',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -384,9 +386,10 @@ const styles = StyleSheet.create({
   },
   relinkButton: {
     backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderRadius: 10,
   },
   relinkButtonText: {
-    color: 'white',
     fontWeight: '600',
     fontSize: 14,
   },
