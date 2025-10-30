@@ -99,7 +99,7 @@ export default function TabHistoryScreen() {
         ) : (
           <>
             {transactions.map((tx) => (
-              <View key={tx.id} style={[styles.transactionCard, { borderColor, backgroundColor: '#1a1a1a' }]}>
+              <View key={tx.id} style={[styles.transactionCard, { borderColor, backgroundColor: '#1a1830' }]}>
                 <View style={styles.transactionHeader}>
                   <View style={styles.transactionHeaderLeft}>
                     <View
@@ -187,6 +187,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
+    backgroundColor: '#1a1830',
   },
   transactionHeader: {
     flexDirection: 'row',

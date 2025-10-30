@@ -123,7 +123,7 @@ export function SendUSDCFeature() {
           <View style={styles.section}>
             <AppText style={styles.label}>Recipient</AppText>
             <TextInput
-              style={[styles.input, { borderColor, backgroundColor: '#1E1D3A', color: textColor }]}
+              style={[styles.input, { borderColor, backgroundColor: '#1a1830', color: textColor }]}
               placeholder="Wallet address or @handle"
               placeholderTextColor={borderColor}
               value={recipient}
@@ -156,7 +156,7 @@ export function SendUSDCFeature() {
             <View style={styles.section}>
               <AppText style={styles.label}>Amount (USDC)</AppText>
               <TextInput
-                style={[styles.input, { borderColor, backgroundColor: '#1E1D3A', color: textColor }]}
+                style={[styles.input, { borderColor, backgroundColor: '#1a1830', color: textColor }]}
                 placeholder="0.00"
                 placeholderTextColor={borderColor}
                 value={amount}

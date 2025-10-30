@@ -1,158 +1,160 @@
-import { API_CONFIG } from '@/constants/api-config';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useTwitterOAuth } from '@/hooks/use-twitter-oauth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { AppText } from '../app-text';
-import { useAuthorization } from '../solana/use-authorization';
+import { API_CONFIG } from '@/constants/api-config'
+import { useThemeColor } from '@/hooks/use-theme-color'
+import { useTwitterOAuth } from '@/hooks/use-twitter-oauth'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import React, { useEffect, useState } from 'react'
+import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { AppText } from '../app-text'
+import { useAuthorization } from '../solana/use-authorization'
+import { AppView } from '../app-view'
 
 interface LinkedTwitter {
-  username: string;
-  name: string;
-  profileImageUrl: string;
-  walletAddress: string;
+  username: string
+  name: string
+  profileImageUrl: string
+  walletAddress: string
 }
 
 export function TwitterLinkFeature() {
-  const { selectedAccount } = useAuthorization();
-  const { authenticate, loading, error } = useTwitterOAuth();
-  const [linkedTwitter, setLinkedTwitter] = useState<LinkedTwitter | null>(null);
-  const [linking, setLinking] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const mutedText = useThemeColor({}, 'icon');
-  const tint = useThemeColor({}, 'tint');
+  const { selectedAccount } = useAuthorization()
+  const { authenticate, loading, error } = useTwitterOAuth()
+  const [linkedTwitter, setLinkedTwitter] = useState<LinkedTwitter | null>(null)
+  const [linking, setLinking] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const backgroundColor = useThemeColor({}, 'background')
+  const textColor = useThemeColor({}, 'text')
+  const mutedText = useThemeColor({}, 'icon')
+  const borderColor = useThemeColor({}, 'border')
+  const tint = useThemeColor({}, 'tint')
 
   // Load linked Twitter account on mount and when wallet changes
   useEffect(() => {
-    loadLinkedTwitter();
-  }, [selectedAccount]);
+    loadLinkedTwitter()
+  }, [selectedAccount])
 
   const loadLinkedTwitter = async () => {
-    setChecking(true);
+    setChecking(true)
     try {
       // First try to load from backend
       if (selectedAccount) {
-        const walletAddress = selectedAccount.publicKey.toBase58();
-        console.log('[Twitter] Fetching linked accounts from backend...');
-        
-        const response = await fetch(`${API_CONFIG.baseUrl}/api/social/get?wallet=${walletAddress}`);
-        const data = await response.json();
-        
+        const walletAddress = selectedAccount.publicKey.toBase58()
+        console.log('[Twitter] Fetching linked accounts from backend...')
+
+        const response = await fetch(`${API_CONFIG.baseUrl}/api/social/get?wallet=${walletAddress}`)
+        const data = await response.json()
+
         if (data.linked && data.socials?.twitter) {
-          console.log('[Twitter] Found linked Twitter account:', data.socials.twitter);
-          
+          console.log('[Twitter] Found linked Twitter account:', data.socials.twitter)
+
           // Handle both string and object formats from backend
-          const twitterData = data.socials.twitter;
-          const twitterInfo = typeof twitterData === 'string' 
-            ? { username: twitterData, name: twitterData, profileImageUrl: '' }
-            : { 
-                username: twitterData.handle?.replace('@', '') || twitterData.username || '',
-                name: twitterData.name || twitterData.handle || '',
-                profileImageUrl: twitterData.profileImageUrl || ''
-              };
-          
+          const twitterData = data.socials.twitter
+          const twitterInfo =
+            typeof twitterData === 'string'
+              ? { username: twitterData, name: twitterData, profileImageUrl: '' }
+              : {
+                  username: twitterData.handle?.replace('@', '') || twitterData.username || '',
+                  name: twitterData.name || twitterData.handle || '',
+                  profileImageUrl: twitterData.profileImageUrl || '',
+                }
+
           setLinkedTwitter({
             ...twitterInfo,
             walletAddress: walletAddress,
-          });
-          return;
+          })
+          return
         }
       }
-      
+
       // Fallback to local storage
-      const stored = await AsyncStorage.getItem('linkedTwitter');
+      const stored = await AsyncStorage.getItem('linkedTwitter')
       if (stored) {
-        const data = JSON.parse(stored);
-        setLinkedTwitter(data);
+        const data = JSON.parse(stored)
+        setLinkedTwitter(data)
       } else {
-        setLinkedTwitter(null);
+        setLinkedTwitter(null)
       }
     } catch (err) {
-      console.error('Failed to load linked Twitter:', err);
+      console.error('Failed to load linked Twitter:', err)
       // Fallback to local storage on error
       try {
-        const stored = await AsyncStorage.getItem('linkedTwitter');
+        const stored = await AsyncStorage.getItem('linkedTwitter')
         if (stored) {
-          const data = JSON.parse(stored);
-          setLinkedTwitter(data);
+          const data = JSON.parse(stored)
+          setLinkedTwitter(data)
         }
       } catch (e) {
-        console.error('Failed to load from local storage:', e);
+        console.error('Failed to load from local storage:', e)
       }
+    } finally {
+      setChecking(false)
     }
-    finally {
-      setChecking(false);
-    }
-  };
+  }
 
   const handleLinkTwitter = async () => {
     if (!selectedAccount) {
-      console.error('No wallet connected');
-      return;
+      console.error('No wallet connected')
+      return
     }
 
     try {
-      setLinking(true);
+      setLinking(true)
 
       // Get wallet address
-      const walletAddress = selectedAccount.publicKey.toBase58();
-      
+      const walletAddress = selectedAccount.publicKey.toBase58()
+
       // Start OAuth flow
-      console.log('[Twitter OAuth] Starting OAuth flow...');
-      const result = await authenticate(walletAddress);
+      console.log('[Twitter OAuth] Starting OAuth flow...')
+      const result = await authenticate(walletAddress)
 
       if (!result) {
-        return;
+        return
       }
-      
+
       // Store Twitter data with wallet address
       const twitterData: LinkedTwitter = {
         username: result.username,
         name: result.name,
         profileImageUrl: result.profileImageUrl,
         walletAddress: walletAddress,
-      };
+      }
 
-      await AsyncStorage.setItem('linkedTwitter', JSON.stringify(twitterData));
-      
+      await AsyncStorage.setItem('linkedTwitter', JSON.stringify(twitterData))
+
       // Update linked account immediately
-      setLinkedTwitter(twitterData);
-      
+      setLinkedTwitter(twitterData)
+
       // Show success message
-      const successMsg = `✓ Successfully linked @${result.username} to your wallet!`;
-      setSuccessMessage(successMsg);
-      console.log(`✅ ${successMsg}`);
-      
+      const successMsg = `✓ Successfully linked @${result.username} to your wallet!`
+      setSuccessMessage(successMsg)
+      console.log(`✅ ${successMsg}`)
+
       // Keep success message visible for 5 seconds
       setTimeout(() => {
-        console.log('⏰ Clearing success message');
-        setSuccessMessage(null);
-      }, 5000);
+        console.log('⏰ Clearing success message')
+        setSuccessMessage(null)
+      }, 5000)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to link Twitter';
-      console.error('Twitter linking error:', errorMessage, err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to link Twitter'
+      console.error('Twitter linking error:', errorMessage, err)
     } finally {
-      setLinking(false);
+      setLinking(false)
     }
-  };
+  }
 
   const handleUnlink = async () => {
     try {
-      await AsyncStorage.removeItem('linkedTwitter');
-      setLinkedTwitter(null);
-      setSuccessMessage('Twitter account unlinked');
-      setTimeout(() => setSuccessMessage(null), 3000);
+      await AsyncStorage.removeItem('linkedTwitter')
+      setLinkedTwitter(null)
+      setSuccessMessage('Twitter account unlinked')
+      setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
-      console.error('Failed to unlink Twitter account:', err);
+      console.error('Failed to unlink Twitter account:', err)
     }
-  };
+  }
 
-  const isLoading = loading || linking;
+  const isLoading = loading || linking
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
@@ -172,13 +174,10 @@ export function TwitterLinkFeature() {
 
       {linkedTwitter ? (
         // Linked Account Display
-        <View style={[styles.linkedCard, { backgroundColor, borderColor: tint }]}>
+        <View style={[styles.linkedCard, { backgroundColor: '#1a1830', borderColor }]}>
           <View style={styles.linkedContent}>
             {linkedTwitter.profileImageUrl ? (
-              <Image
-                source={{ uri: linkedTwitter.profileImageUrl }}
-                style={styles.profileImage}
-              />
+              <Image source={{ uri: linkedTwitter.profileImageUrl }} style={styles.profileImage} />
             ) : (
               <View style={[styles.profileImagePlaceholder, { backgroundColor: tint }]}>
                 <AppText style={styles.profileImagePlaceholderText}>
@@ -188,45 +187,31 @@ export function TwitterLinkFeature() {
             )}
 
             <View style={styles.linkedInfo}>
-              <AppText style={[styles.linkedName, { color: textColor }]}>
-                {linkedTwitter.name}
-              </AppText>
-              <AppText style={[styles.linkedHandle, { color: mutedText }]}>
-                @{linkedTwitter.username}
-              </AppText>
-              <View style={[styles.linkedBadge, { borderColor: tint }]}>
+              <View style={styles.headerRow}>
+                <AppText style={[styles.linkedName, { color: textColor }]}>@{linkedTwitter.username}</AppText>
+                <TouchableOpacity
+                  style={[styles.relinkButtonCompact, { borderColor }]}
+                  onPress={handleLinkTwitter}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={tint} size="small" />
+                  ) : (
+                    <AppText style={[styles.relinkButtonText, { color: tint }]}>Relink</AppText>
+                  )}
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.linkedBadge, { borderColor: tint, marginTop: 8 }]}>
                 <View style={[styles.linkedBadgeDot, { backgroundColor: tint }]} />
                 <AppText style={[styles.linkedBadgeText, { color: tint }]}>Linked to Wallet</AppText>
               </View>
             </View>
           </View>
-
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, styles.relinkButton, { borderColor: tint }]}
-              onPress={handleLinkTwitter}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={tint} size="small" />
-              ) : (
-                <AppText style={[styles.relinkButtonText, { color: tint }]}>Relink</AppText>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.unlinkButton]}
-              onPress={handleUnlink}
-              disabled={isLoading}
-            >
-              <AppText style={styles.unlinkButtonText}>Unlink</AppText>
-            </TouchableOpacity>
-          </View>
         </View>
       ) : (
         // Link Button
         <TouchableOpacity
-          style={[styles.button, styles.linkButton, { backgroundColor: '#5865F2', marginTop: 10 }]}
+          style={[styles.button, styles.linkButton, { backgroundColor: tint, marginTop: 10 }]}
           onPress={handleLinkTwitter}
           disabled={isLoading || checking || !selectedAccount}
         >
@@ -236,7 +221,7 @@ export function TwitterLinkFeature() {
               <AppText style={styles.linkButtonText}>{checking ? 'Checking...' : 'Linking...'}</AppText>
             </View>
           ) : (
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Image source={require('../../assets/x.png')} style={{ width: 20, height: 20 }} />
               <AppText style={styles.linkButtonText}>Link Twitter Account</AppText>
             </View>
@@ -245,12 +230,10 @@ export function TwitterLinkFeature() {
       )}
 
       {!selectedAccount && (
-        <AppText style={[styles.connectWalletText, { color: mutedText }]}>
-          Connect your wallet to link Twitter
-        </AppText>
+        <AppText style={[styles.connectWalletText, { color: mutedText }]}>Connect your wallet to link Twitter</AppText>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -299,6 +282,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 16,
     padding: 16,
+    gap: 16,
   },
   linkedContent: {
     flexDirection: 'row',
@@ -327,10 +311,24 @@ const styles = StyleSheet.create({
   linkedInfo: {
     flex: 1,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+  },
   linkedName: {
     fontSize: 17,
     fontWeight: '700',
-    marginBottom: 4,
+    flex: 1,
+  },
+  relinkButtonCompact: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   linkedHandle: {
     fontSize: 14,
@@ -406,4 +404,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 13,
   },
-});
+})

@@ -290,7 +290,7 @@ export default function ShareHandlerScreen() {
           <AppText style={styles.successTitle}>Transaction Sent!</AppText>
           <AppText style={styles.successSubtitle}>Your USDC has been sent successfully</AppText>
 
-          <View style={styles.successDetailsCard}>
+          <View style={[styles.successDetailsCard, { backgroundColor: '#1a1830', borderColor, borderWidth: 1 }]}>
             <View style={styles.successDetailRow}>
               <AppText style={styles.successDetailLabel}>Recipient</AppText>
               <AppText style={styles.successDetailValue}>{recipient}</AppText>
@@ -298,12 +298,12 @@ export default function ShareHandlerScreen() {
 
             <View style={styles.successDetailRow}>
               <AppText style={styles.successDetailLabel}>Amount</AppText>
-              <AppText style={styles.successDetailValue}>{amount} USDC</AppText>
+              <AppText style={[styles.successDetailValue, { color: '#10b981' }]}>{amount} USDC</AppText>
             </View>
 
             <View style={styles.successDetailRow}>
               <AppText style={styles.successDetailLabel}>Status</AppText>
-              <AppText style={styles.successDetailValue}>
+              <AppText style={[styles.successDetailValue, { color: '#10b981' }]}>
                 {flow === 'linked' ? 'Direct Transfer' : 'Held in Escrow'}
               </AppText>
             </View>
@@ -311,7 +311,7 @@ export default function ShareHandlerScreen() {
             <View
               style={[
                 styles.successDetailRow,
-                { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#333' },
+                { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor },
               ]}
             >
               <AppText style={styles.successDetailLabel}>Transaction</AppText>
@@ -338,8 +338,8 @@ export default function ShareHandlerScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: backgroundColor }}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 20 }}>
+        <View style={[styles.container, { paddingTop: 50 }]}>
           <View style={styles.header}>
             <AppText style={styles.title}>Send USDC via Twitter</AppText>
             <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
@@ -352,7 +352,7 @@ export default function ShareHandlerScreen() {
           {/* Recipient Display */}
           <View style={styles.section}>
             <AppText style={styles.label}>Recipient</AppText>
-            <View style={[styles.recipientDisplay, { backgroundColor: '#1E1D3A', borderColor }]}>
+            <View style={[styles.recipientDisplay, { backgroundColor: '#1a1830', borderColor }]}>
               <AppText style={styles.recipientText}>{recipient}</AppText>
             </View>
           </View>
@@ -373,7 +373,7 @@ export default function ShareHandlerScreen() {
             <View style={styles.section}>
               <AppText style={styles.label}>Amount (USDC)</AppText>
               <TextInput
-                style={[styles.input, { borderColor, backgroundColor: '#1E1D3A', color: textColor }]}
+                style={[styles.input, { borderColor, backgroundColor: '#1a1830', color: textColor }]}
                 placeholder="0.00"
                 placeholderTextColor={borderColor}
                 value={amount}
@@ -568,11 +568,8 @@ const styles = StyleSheet.create({
   },
   successDetailsCard: {
     width: '100%',
-    backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#333333',
     marginBottom: 32,
   },
   successDetailRow: {

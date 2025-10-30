@@ -182,7 +182,7 @@ export function SocialLinkFeature() {
         <View style={styles.inputContainer}>
           <AppText style={styles.label}>Twitter Handle</AppText>
           <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
+            style={[styles.input, { borderColor, backgroundColor: '#1a1830', color: textColor }]}
             placeholder="@username"
             placeholderTextColor={borderColor}
             value={twitterHandle}
@@ -199,7 +199,7 @@ export function SocialLinkFeature() {
         <View style={styles.inputContainer}>
           <AppText style={styles.label}>Instagram Handle</AppText>
           <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
+            style={[styles.input, { borderColor, backgroundColor: '#1a1830', color: textColor }]}
             placeholder="@username"
             placeholderTextColor={borderColor}
             value={instagramHandle}
@@ -216,7 +216,7 @@ export function SocialLinkFeature() {
         <View style={styles.inputContainer}>
           <AppText style={styles.label}>LinkedIn Handle</AppText>
           <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
+            style={[styles.input, { borderColor, backgroundColor: '#1a1830', color: textColor }]}
             placeholder="@username"
             placeholderTextColor={borderColor}
             value={linkedinHandle}
