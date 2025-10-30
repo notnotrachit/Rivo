@@ -1,7 +1,7 @@
 {
   "name": "Rivo",
-  "displayName": "Mobile Expo Boilerplate",
-  "description": "A template for building a Solana mobile app with Expo and React Native.",
+  "displayName": "Rivo",
+  "description": "A Solana mobile app for seamless crypto payments and social features.",
   "usecase": "Mobile",
   "keywords": [
     "expo",

@@ -17,7 +17,7 @@
         "backgroundColor": "#2D2B55"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.beeman.web3jsexpo"
+      "package": "com.rivo.app"
     },
     "web": {
       "bundler": "metro",
